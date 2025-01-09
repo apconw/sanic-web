@@ -64,6 +64,9 @@
    - 添加Dify大模型提供商Ollama,配置Qwen2.5模型
    - 导入项目根目录下的**docker/dify/数据问答_v1.1.0.yml画布**至Dify并获取对应的api-key
 
+![image](./images/llm-setting.png)
+![image](./images/import-convas.png)
+![image](./images/convas-api-key.png)
    
 ## 🚀 **快速体验**
    - 具体步骤如下：
