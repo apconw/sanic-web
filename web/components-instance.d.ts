@@ -4,4 +4,3 @@ declare global {
   }
 }
 export { }
-

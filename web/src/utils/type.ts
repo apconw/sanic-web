@@ -41,5 +41,5 @@ export function isBigInt(obj: any) {
 }
 
 export function isNumberical(obj: any) {
-  return !isNaN(parseFloat(obj)) && isFinite(obj)
+  return !isNaN(Number.parseFloat(obj)) && isFinite(obj)
 }

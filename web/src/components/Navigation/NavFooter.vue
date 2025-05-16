@@ -1,16 +1,14 @@
 <script lang="ts" setup>
-
 withDefaults(
   defineProps<{
     showBorder?: boolean
   }>(),
   {
-    showBorder: false
-  }
+    showBorder: false,
+  },
 )
 
 const link = ref('https://github.com/pdsuwwz')
-
 </script>
 
 <template>

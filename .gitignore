@@ -19,7 +19,6 @@ docker/dify/volumes/*
 
 web/node_modules/
 web/dist/
-web/.vscode/
 
 .DS_Store
 .idea/

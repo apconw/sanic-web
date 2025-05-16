@@ -1,4 +1,13 @@
 <script lang="tsx" setup>
+const props = withDefaults(
+  defineProps<Props>(),
+  {
+    text: '',
+    autoColor: true,
+    noCopy: false,
+  },
+)
+
 const { copy, copied, copyDuration } = useClipText()
 
 interface Props {
@@ -6,27 +15,20 @@ interface Props {
   autoColor?: boolean
   noCopy?: boolean
 }
-const props = withDefaults(
-  defineProps<Props>(),
-  {
-    text: '',
-    autoColor: true,
-    noCopy: false
-  }
-)
-
 const copyText = async () => {
-  if (copied.value) return
+  if (copied.value) {
+    return
+  }
 
   await copy(props.text)
   window.$ModalMessage.destroyAll()
   window.$ModalMessage.success('已复制', {
-    duration: copyDuration
+    duration: copyDuration,
   })
 }
 
 defineExpose({
-  copyText
+  copyText,
 })
 </script>
 
@@ -38,7 +40,7 @@ defineExpose({
       name="default"
       v-bind="{
         copyText,
-        copied
+        copied,
       }"
     ></slot>
   </template>
@@ -48,10 +50,10 @@ defineExpose({
     :class="[
       copied
         ? `cursor-initial i-ic:baseline-check ${autoColor && 'c-primary'}`
-        : 'cursor-pointer i-ci:copy'
+        : 'cursor-pointer i-ci:copy',
     ]"
     v-bind="{
-      onClick: !noCopy ? copyText : () => {}
+      onClick: !noCopy ? copyText : () => {},
     }"
   ></div>
 </template>

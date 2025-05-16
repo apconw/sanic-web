@@ -10,7 +10,7 @@ import { currentHost } from '@/utils/location'
 
 // redirect error
 function errorRedirect(url: string) {
-  Router.push(`/${ url }`)
+  Router.push(`/${url}`)
 }
 // code Message
 const codeMessage: {
@@ -32,7 +32,7 @@ const codeMessage: {
   500: '服务器发生错误，请检查服务器。',
   502: '网关错误。',
   503: '服务不可用，服务器暂时过载或维护。',
-  504: '网关超时。'
+  504: '网关超时。',
 }
 
 // 创建axios实例
@@ -40,12 +40,12 @@ const service: AxiosInstance = axios.create({
   // api 的 base_url
   baseURL: currentHost.baseApi,
   // 请求超时时间
-  timeout: 200000
+  timeout: 200000,
 })
 
 // request拦截器
 service.interceptors.request.use(
-  request => {
+  (request) => {
     const token: string | undefined = Cookie.get('token')
 
     // Conversion of hump nomenclature
@@ -60,14 +60,14 @@ service.interceptors.request.use(
     request.headers!.Authorization = token as string
     return request
   },
-  error => {
+  (error) => {
     return Promise.reject(error)
-  }
+  },
 )
 
 // respone拦截器
 service.interceptors.response.use(
-  response => {
+  (response) => {
     /**
      * response data
      *   {
@@ -91,26 +91,27 @@ service.interceptors.response.use(
     }
 
     if (
-      response.request.responseType === 'blob' &&
-  /json$/gi.test(response.headers['content-type'])
+      response.request.responseType === 'blob'
+      && /json$/i.test(response.headers['content-type'])
     ) {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         const reader = new FileReader()
         reader.readAsText(<Blob>response.data)
 
         reader.onload = () => {
-          if (!reader.result || typeof reader.result !== 'string') return resolve(response.data)
+          if (!reader.result || typeof reader.result !== 'string') {
+            return resolve(response.data)
+          }
 
           response.data = JSON.parse(reader.result)
           resolve(response.data)
         }
-
       })
     } else if (data instanceof Blob) {
       return {
         data,
         msg: '',
-        error: 0
+        error: 0,
       }
     }
 
@@ -118,7 +119,7 @@ service.interceptors.response.use(
       return {
         data: data.data,
         error: data.code === 200 ? 0 : -1,
-        msg: 'ok'
+        msg: 'ok',
       }
     }
 
@@ -127,7 +128,7 @@ service.interceptors.response.use(
       return {
         data,
         error: 0,
-        msg: 'ok'
+        msg: 'ok',
       }
     }
 
@@ -137,7 +138,7 @@ service.interceptors.response.use(
     }
     return data
   },
-  error => {
+  (error) => {
     /**
      * 某些特定的接口 404 500 需要跳转
      * 在需要重定向的接口中传入 redirect字段  值为要跳转的路由
@@ -153,7 +154,7 @@ service.interceptors.response.use(
       return {
         data: {},
         error: error.response.status,
-        msg: codeMessage[error.response.status] || error.response.data.message
+        msg: codeMessage[error.response.status] || error.response.data.message,
       }
     } else {
       // 某些特定的接口 failed 需要跳转
@@ -162,10 +163,10 @@ service.interceptors.response.use(
         data: {},
         error: 5000,
         aborted: error.config.signal?.aborted,
-        msg: '服务请求不可用，请重试或检查您的网络。'
+        msg: '服务请求不可用，请重试或检查您的网络。',
       }
     }
-  }
+  },
 )
 
 export function sleep(time = 0) {
@@ -181,11 +182,11 @@ function extractFileNameFromContentDispositionHeader(value: string) {
     /filename\*=[^']+'\w*'"([^"]+)";?/i,
     /filename\*=[^']+'\w*'([^;]+);?/i,
     /filename="([^;]*);?"/i,
-    /filename=([^;]*);?/i
+    /filename=([^;]*);?/i,
   ]
 
   let responseFilename: any = null
-  patterns.some(regex => {
+  patterns.some((regex) => {
     responseFilename = regex.exec(value)
     return responseFilename !== null
   })
@@ -205,7 +206,7 @@ export function downloadFile(boldData: BlobPart, filename = '预设文件名称'
   const blob = boldData instanceof Blob
     ? boldData
     : new Blob([boldData], {
-      type
+      type,
     })
   const url = window.URL.createObjectURL(blob)
 
@@ -234,7 +235,7 @@ const requestSuite: IRequestSuite = {
   get(uri, params, config) {
     return service.get(uri, {
       params,
-      ...config
+      ...config,
     })
   },
   post(uri, data, config) {
@@ -248,7 +249,7 @@ const requestSuite: IRequestSuite = {
   },
   delete(uri, config) {
     return service.delete(uri, config)
-  }
+  },
 }
 
 export default requestSuite

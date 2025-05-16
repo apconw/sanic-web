@@ -1,23 +1,23 @@
 module.exports = {
-  'extends': [
+  extends: [
     'stylelint-config-standard',
     'stylelint-config-standard-scss',
     'stylelint-config-recommended-vue',
-    'stylelint-config-recommended-vue/scss'
+    'stylelint-config-recommended-vue/scss',
   ],
-  'plugins': ['@stylistic/stylelint-plugin'],
-  'ignoreFiles': ['**/*.js', '**/*.ts'],
-  'defaultSeverity': 'error',
-  'rules': {
+  plugins: ['@stylistic/stylelint-plugin'],
+  ignoreFiles: ['**/*.js', '**/*.ts'],
+  defaultSeverity: 'error',
+  rules: {
     'unit-disallowed-list': [
       'rem',
-      'pt'
+      'pt',
     ],
     '@stylistic/indentation': [
       2,
       {
-        'baseIndentLevel': 0
-      }
+        baseIndentLevel: 0,
+      },
     ],
     'no-empty-source': null,
     'block-no-empty': null,
@@ -33,33 +33,33 @@ module.exports = {
     'selector-pseudo-class-no-unknown': [
       true,
       {
-        'ignorePseudoClasses': [
+        ignorePseudoClasses: [
           'export',
-          'deep'
-        ]
-      }
+          'deep',
+        ],
+      },
     ],
     'color-function-notation': ['modern', {
-      'ignore': ['with-var-inside']
+      ignore: ['with-var-inside'],
     }],
     'property-no-unknown': null,
     'at-rule-empty-line-before': [
       'always',
       {
-        'except': ['first-nested', 'blockless-after-same-name-blockless']
-      }
+        except: ['first-nested', 'blockless-after-same-name-blockless'],
+      },
     ],
     'custom-property-empty-line-before': [
       'always',
       {
-        'except': ['after-custom-property', 'first-nested']
-      }
+        except: ['after-custom-property', 'first-nested'],
+      },
     ],
     'declaration-empty-line-before': [
       'always',
       {
-        'except': ['after-declaration', 'first-nested']
-      }
+        except: ['after-declaration', 'first-nested'],
+      },
     ],
     'rule-empty-line-before': ['always-multi-line'],
 
@@ -67,8 +67,8 @@ module.exports = {
     'property-no-vendor-prefix': [
       true,
       {
-        ignoreProperties: ['box-shadow']
-      }
-    ]
-  }
+        ignoreProperties: ['box-shadow'],
+      },
+    ],
+  },
 }

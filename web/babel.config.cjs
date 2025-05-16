@@ -1,5 +1,5 @@
 module.exports = {
   plugins: [
-    '@vue/babel-plugin-jsx'
-  ]
+    '@vue/babel-plugin-jsx',
+  ],
 }

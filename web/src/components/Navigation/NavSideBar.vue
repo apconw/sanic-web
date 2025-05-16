@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-
 const router = useRouter()
 
 
@@ -7,8 +6,8 @@ const testRoutesNavs = computed(() => {
   const routes = router.getRoutes()
   const _routes = routes.filter((routeItem) => {
     return (routeItem.name !== 'UserLogin')
-    && !routeItem.redirect
-    && routeItem?.meta?.title
+      && !routeItem.redirect
+      && routeItem?.meta?.title
   })
   return _routes.sort((prev, next) => {
     return prev.meta.title! > next.meta.title!
@@ -20,7 +19,7 @@ const testRoutesNavs = computed(() => {
 /**
  * 随机生成测试 params hash
  */
-const extractParamsFromRoute = (routePath) =>{
+const extractParamsFromRoute = (routePath) => {
   const paramRegex = /:([^/?]+)/g
   const params = {}
 
@@ -35,11 +34,9 @@ const extractParamsFromRoute = (routePath) =>{
 const handleNavigateTo = (routeItem: RouteRecordRaw) => {
   router.push({
     name: routeItem.name,
-    params: extractParamsFromRoute(routeItem.path)
+    params: extractParamsFromRoute(routeItem.path),
   })
 }
-
-
 </script>
 
 <template>
@@ -60,7 +57,6 @@ const handleNavigateTo = (routeItem: RouteRecordRaw) => {
 </template>
 
 <style lang="scss" scoped>
-
 .navigation-nav-sidebar-container {
   --at-apply: flex flex-col;
   --at-apply: w-full h-full overflow-y-auto b-1 b-solid;

@@ -1,37 +1,37 @@
 {
   "compilerOptions": {
 
-    "declaration": false,
-    "noImplicitAny": false,
-    "removeComments": true,
-    "noLib": false,
-    "experimentalDecorators": true,
-    "forceConsistentCasingInFileNames": true,
-    
+
     "target": "esnext",
+    "jsx": "preserve",
+    "lib": ["esnext", "dom"],
+    "noLib": false,
     "useDefineForClassFields": true,
+    "experimentalDecorators": true,
+
+    "baseUrl": "./",
     "module": "esnext",
     "moduleResolution": "node",
-    "strict": true,
-    "jsx": "preserve",
-    "sourceMap": true,
+    "noImplicitAny": false,
+    "declaration": false,
+    "removeComments": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
     "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    "lib": ["esnext", "dom"],
-    
     "types": [
       "vite/client",
       "node",
       "naive-ui/volar"
     ],
-    "baseUrl": "./",
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    }
+    "strict": true,
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",

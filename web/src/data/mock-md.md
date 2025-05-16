@@ -44,16 +44,7 @@
 
 
 ```vue
-<template>
-  <div>
-    <h1>{{ message }}</h1>
-    <button @click="updateMessage">点击我</button>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref } from 'vue'
-
 // 创建一个响应式变量
 const message = ref('欢迎使用 Vue 3 组件示例！')
 
@@ -62,6 +53,13 @@ const updateMessage = () => {
   message.value = '你点击了按钮！'
 }
 </script>
+
+<template>
+  <div>
+    <h1>{{ message }}</h1>
+    <button @click="updateMessage">点击我</button>
+  </div>
+</template>
 
 <style lang="scss" scoped>
 /* 添加一些样式以美化组件 */
@@ -83,19 +81,19 @@ button:hover {
 </style>
 ```
 
-**模拟接口说明**:  
+**模拟接口说明**:
 - **接口请求**: 当用户发送请求“请展示一个 Vue 3 的示例组件”时，本模拟系统返回上述代码和说明。
 - **接口响应**: 响应中包括 Vue 3 示例组件的代码和详细说明，用于演示如何使用 `setup` 语法构建组件。
 
 **注意**: 本模拟回复仅为演示用途，真实的接口调用及其效果需在本地运行相应代码来体验。
 
 
-**组件细节描述**:  
+**组件细节描述**:
 - **功能描述**: 该组件包含一个标题和一个按钮，点击按钮会触发更新消息的功能。
 - **技术细节**: 使用 Vue 3 的 `setup` 语法来定义响应式数据和方法。`message` 是一个使用 `ref` 创建的响应式变量，`updateMessage` 方法用于更新该变量的值。
 - **样式说明**: 组件的样式使用了 `scss` 语法，并且 `scoped` 确保样式只应用于该组件。标题的颜色设置为绿色，按钮在悬停时会变为深色。
 
-**适用场景**:  
+**适用场景**:
 - **学习和演示**: 该组件是一个简单的示例，非常适合用于学习和演示 Vue 3 的基本用法和 `setup` 语法。
 - **实际应用**: 可以根据项目需求，对该组件进行扩展和修改，应用到实际项目中。
 

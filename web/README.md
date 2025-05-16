@@ -192,12 +192,12 @@ const defaultLLMTypeName: TransformStreamModelTypes = isMockDevelopment
 #### 💡 提示
 
 > `defaultLLMTypeName` 会根据模型映射自动选择合适的模型，也可以手动指定模型
-> 
+>
 > 如果后端返回的是可直接渲染的纯字符串（而非 JSON），standard 模型将适用于所有这种情况
 
 ## 🌹 支持
 
-如果你喜欢这个项目或发现有用，可以点右上角 [`Star`](https://github.com/pdsuwwz/chatgpt-vue3-light-mvp) 支持一下，你的支持是我们不断改进的动力，感谢！ ^_^ 
+如果你喜欢这个项目或发现有用，可以点右上角 [`Star`](https://github.com/pdsuwwz/chatgpt-vue3-light-mvp) 支持一下，你的支持是我们不断改进的动力，感谢！ ^_^
 
 
 ## 😎 Awesome
@@ -207,4 +207,3 @@ const defaultLLMTypeName: TransformStreamModelTypes = isMockDevelopment
 ## License
 
 [MIT](./LICENSE) License | Copyright © 2020-PRESENT [Wisdom](https://github.com/pdsuwwz)
-

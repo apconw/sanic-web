@@ -48,6 +48,7 @@
     "eagerComputed": true,
     "effectScope": true,
     "extendRef": true,
+    "fetchConversationHistory": true,
     "getCurrentInstance": true,
     "getCurrentScope": true,
     "h": true,
@@ -281,6 +282,7 @@
     "useTransition": true,
     "useUrlSearchParams": true,
     "useUserMedia": true,
+    "useUserStore": true,
     "useVModel": true,
     "useVModels": true,
     "useVibrate": true,
@@ -310,8 +312,15 @@
     "watchTriggerable": true,
     "watchWithFilter": true,
     "whenever": true,
-    "useUserStore": true,
-    "createStreamFromValue": true,
-    "fetchConversationHistory": true
+    "BusinessState": true,
+    "DirectiveBinding": true,
+    "MaybeRef": true,
+    "MaybeRefOrGetter": true,
+    "Slot": true,
+    "Slots": true,
+    "onWatcherCleanup": true,
+    "useId": true,
+    "useModel": true,
+    "useTemplateRef": true
   }
 }

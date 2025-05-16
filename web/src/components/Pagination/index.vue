@@ -1,45 +1,43 @@
 <script lang="tsx" setup>
-
 /**
 使用:
-
+ 
 <Pagination
   v-model:page="currentPage"
   :page-count="100"
   @change="handleChangePage"
 />
-
+ 
 const currentPage = ref(2)
 const handleChangePage = (n: number) => {
   console.log('nnnn', n)
 }
-
+ 
  */
 
 defineOptions({
-  name: 'Pagination'
+  name: 'Pagination',
 })
 const props = defineProps({
   page: {
     type: Number,
-    default: 1
+    default: 1,
   },
   pageCount: {
     type: Number,
-    default: 1
-  }
+    default: 1,
+  },
 })
-
-const {
-  page,
-  pageCount
-} = toRefs(props)
 
 const emits = defineEmits([
   'update:page',
-  'change'
+  'change',
 ])
 
+const {
+  page,
+  pageCount,
+} = toRefs(props)
 
 /**
  * 当前页码（非数组下标）
@@ -51,7 +49,7 @@ watch(
   () => activePage.value,
   () => {
     emits('update:page', activePage.value)
-  }
+  },
 )
 
 watch(
@@ -60,8 +58,8 @@ watch(
     activePage.value = page.value
   },
   {
-    deep: true
-  }
+    deep: true,
+  },
 )
 
 const handleToChangePage = () => {
@@ -91,7 +89,7 @@ const showGroupsAuto = computed(() => {
 const allPageNumbers = computed(() => {
   return Array
     .from({
-      length: pageCount.value
+      length: pageCount.value,
     })
     .map((_, idx) => idx + 1)
 })
@@ -157,7 +155,7 @@ const groupPageRange = computed(() => {
 
   return {
     startIndex,
-    endIndex
+    endIndex,
   }
 })
 
@@ -222,7 +220,7 @@ const RenderSinglePageContainer = ({
   active = false,
   disabled = false,
   onClick = () => { },
-  ghost = false
+  ghost = false,
 }: SinglePageContainerType & SetupContext['attrs'], VNode: SetupContext) => {
   const slots = VNode.slots.default
     ? VNode.slots.default()
@@ -231,7 +229,7 @@ const RenderSinglePageContainer = ({
   const defaultClassName = [
     'flex items-center justify-center min-w-30px h-30px c-primary cursor-pointer select-none',
     'rounded-3px c-#fff',
-    'b'
+    'b',
   ]
 
   const activeClassName = active ? 'c-primary b-primary b-solid' : ''
@@ -244,7 +242,7 @@ const RenderSinglePageContainer = ({
         [
           ...defaultClassName,
           activeClassName,
-          disabledClassName
+          disabledClassName,
         ]
       }
     >{ slots }</div>
@@ -255,7 +253,7 @@ const RenderSinglePageContainer = ({
 /**
  * 页码容器
  */
-const RenderSinglePageNumber = ({ num = 1, ...attrs }: { num: number; key?: number; } & SinglePageContainerType) => {
+const RenderSinglePageNumber = ({ num = 1, ...attrs }: { num: number, key?: number } & SinglePageContainerType) => {
   const onClick = () => {
     activePage.value = num
     handleToChangePage()
@@ -275,21 +273,23 @@ const RenderPartOfNavNumbers = () => {
   return (
     <>
       {
-        showOverflowPrev.value ? <RenderSinglePageNumber num={1}/> : null
+        showOverflowPrev.value ? <RenderSinglePageNumber num={1} /> : null
       }
       {
         showOverflowPrev.value
-          ? <RenderSinglePageContainer
-            onClick={() => handleToQuickPrev()}
-            class={'group'}
-          >
-            <div class="i-bx:dots-horizontal-rounded group-hover:i-ic:twotone-keyboard-double-arrow-left"></div>
-          </RenderSinglePageContainer>
+          ? (
+              <RenderSinglePageContainer
+                onClick={() => handleToQuickPrev()}
+                class={'group'}
+              >
+                <div class="i-bx:dots-horizontal-rounded group-hover:i-ic:twotone-keyboard-double-arrow-left"></div>
+              </RenderSinglePageContainer>
+            )
           : null
       }
 
       {
-        getGroupPageNumbers.value.map(num => (
+        getGroupPageNumbers.value.map((num) => (
           <RenderSinglePageNumber
             active={activePage.value === num}
             num={num}
@@ -299,21 +299,22 @@ const RenderPartOfNavNumbers = () => {
 
       {
         showOverflowNext.value
-          ? <RenderSinglePageContainer
-            onClick={() => handleToQuickNext()}
-            class={'group'}
-          >
-            <div class="i-bx:dots-horizontal-rounded group-hover:i-ic:twotone-keyboard-double-arrow-right"></div>
-          </RenderSinglePageContainer>
+          ? (
+              <RenderSinglePageContainer
+                onClick={() => handleToQuickNext()}
+                class={'group'}
+              >
+                <div class="i-bx:dots-horizontal-rounded group-hover:i-ic:twotone-keyboard-double-arrow-right"></div>
+              </RenderSinglePageContainer>
+            )
           : null
       }
       {
-        showOverflowNext.value ? <RenderSinglePageNumber num={pageCount.value}/> : null
+        showOverflowNext.value ? <RenderSinglePageNumber num={pageCount.value} /> : null
       }
     </>
   )
 }
-
 </script>
 
 

@@ -12,14 +12,13 @@ function capitalizeFirstLetter(str) {
 }
 
 const getBaseLanguageName = (nameOrAlias, components = PrismJsComponents) => {
-
   const _nameOrAlias = nameOrAlias.toLowerCase()
 
   const allLanguages = components.languages
   const allLanguageKeys = Object.keys(allLanguages)
 
   const lang = {
-    value: capitalizeFirstLetter(nameOrAlias || 'markdown')
+    value: capitalizeFirstLetter(nameOrAlias || 'markdown'),
   }
 
   for (let index = 0; index < allLanguageKeys.length; index++) {
@@ -38,7 +37,6 @@ const getBaseLanguageName = (nameOrAlias, components = PrismJsComponents) => {
     }
 
     if (Array.isArray(alias)) {
-
       if (aliasTitles && aliasTitles[_nameOrAlias]) {
         lang.value = aliasTitles[_nameOrAlias]
         break
@@ -76,16 +74,16 @@ export function preWrapperPlugin(md: MarkdownIt, options: Options) {
     const content = fence(...args)
     return (
       `
-      <div class="markdown-code-wrapper flex language-${ lang }${ getAdaptiveThemeMarker(options) }${ active }">
+      <div class="markdown-code-wrapper flex language-${lang}${getAdaptiveThemeMarker(options)}${active}">
         <div class="markdown-code-header">
-          <span class="markdown-code-lang">${ getBaseLanguageName(lang) }</span>
+          <span class="markdown-code-lang">${getBaseLanguageName(lang)}</span>
           <button class="markdown-code-copy">
             <div class="markdown-copy-icon"></div>
             <span class="markdown-copy-text default">复制代码</span>
             <span class="markdown-copy-text done">已复制</span>
           </button>
         </div>
-        ${ content }
+        ${content}
       </div>
       `
     )
@@ -99,7 +97,7 @@ export function getAdaptiveThemeMarker(options: Options) {
 export function extractTitle(info: string, html = false) {
   if (html) {
     return (
-      info.replace(/<!--[^]*?-->/g, '').match(/data-title="(.*?)"/)?.[1] || ''
+      info.replace(/<!--[\s\S]*?-->/g, '').match(/data-title="(.*?)"/)?.[1] || ''
     )
   }
   return info.match(/\[(.*)\]/)?.[1] || extractLang(info) || 'txt'
@@ -109,8 +107,8 @@ function extractLang(info: string) {
   return info
     .trim()
     .replace(/=(\d*)/, '')
-    .replace(/:(no-)?line-numbers({| |$|=\d*).*/, '')
-    .replace(/(-vue|{| ).*$/, '')
+    .replace(/:(no-)?line-numbers(\{| |$|=\d*).*/, '')
+    .replace(/(-vue|\{| ).*$/, '')
     .replace(/^vue-html$/, 'template')
     .replace(/^ansi$/, '')
 }

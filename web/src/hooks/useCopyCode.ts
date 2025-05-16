@@ -2,7 +2,9 @@ export function useCopyCode() {
   const timeoutIdMap: WeakMap<HTMLElement, NodeJS.Timeout> = new WeakMap()
   window.addEventListener('click', (e) => {
     const el = e.target as HTMLElement
-    if (!el.matches('div[class*="language-"] button.markdown-code-copy')) return
+    if (!el.matches('div[class*="language-"] button.markdown-code-copy')) {
+      return
+    }
 
     const parent = el.parentElement
     const sibling = parent?.nextElementSibling
@@ -11,7 +13,7 @@ export function useCopyCode() {
     }
 
     const isShell = /language-(shellscript|shell|bash|sh|zsh)/.test(
-      parent.className
+      parent.className,
     )
 
     const ignoredNodes = []

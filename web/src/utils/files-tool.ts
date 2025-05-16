@@ -1,5 +1,5 @@
-import { mockEventStreamText } from '@/data'
 import * as TransformUtils from '@/components/MarkdownPreview/transform'
+import { mockEventStreamText } from '@/data'
 
 export const bytesToKB = (bytes) => {
   return bytes / 1024
@@ -18,11 +18,13 @@ export const bytesToTB = (bytes) => {
 }
 
 export const formatBytes = (bytes) => {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) {
+    return '0 Bytes'
+  }
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `≈ ${ parseFloat((bytes / k ** i).toFixed(0)) } ${ sizes[i] }`
+  return `≈ ${Number.parseFloat((bytes / k ** i).toFixed(0))} ${sizes[i]}`
 }
 
 /**
@@ -30,10 +32,10 @@ export const formatBytes = (bytes) => {
  */
 export const convertTextToFile = (textContent, fileName) => {
   const blob = new Blob([textContent], {
-    type: 'text/plain'
+    type: 'text/plain',
   })
   const file = new File([blob], fileName, {
-    type: 'text/plain'
+    type: 'text/plain',
   })
   return file
 }
@@ -46,10 +48,10 @@ export const convertTextToFile = (textContent, fileName) => {
  */
 export const sanitizeAndAppendTxtExtension = (text) => {
   // 替换非法文件名字符为 '-'，包括 '.', 逗号和其他非法字符
-  const sanitizedText = text.replace(/[\/\\:*?"<>|.,;]/g, '-')
+  const sanitizedText = text.replace(/[/\\:*?"<>|.,;]/g, '-')
 
   // 使用正则表达式检查并替换最后的后缀
-  return `${ sanitizedText.replace(/\.[^/.]+$/, '') }.txt`
+  return `${sanitizedText.replace(/\.[^/.]+$/, '')}.txt`
 }
 
 
@@ -71,7 +73,7 @@ export const createMockReader = (delay = 5): ReadableStreamDefaultReader<string>
       } else {
         controller.close()
       }
-    }
+    },
   })
 
   return stream.pipeThrough(new TextDecoderStream())

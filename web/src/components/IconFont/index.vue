@@ -1,31 +1,30 @@
 <script lang="ts">
-
 export default defineComponent({
   name: 'IconFont',
   props: {
     icon: {
       type: String,
-      default: ''
+      default: '',
     },
     shadow: {
       type: Boolean,
-      default: false
+      default: false,
     },
     verticalCenter: {
       type: Boolean,
-      default: false
+      default: false,
     },
     cursor: {
       type: Boolean,
-      default: false
+      default: false,
     },
     disabled: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['click'],
-  setup (props, { emit }) {
+  setup(props, { emit }) {
     const getClassName = computed(() => {
       const className: string[] = []
       if (props.verticalCenter) {
@@ -46,17 +45,17 @@ export default defineComponent({
 
     const getAttrs = () => {
       const attrs: any = {}
-      props.shadow &&
-      (attrs.filter = 'url(#drop-shadow)')
+      props.shadow
+      && (attrs.filter = 'url(#drop-shadow)')
       return attrs
     }
     return {
       getClassName,
 
       handleClick,
-      getAttrs
+      getAttrs,
     }
-  }
+  },
 })
 </script>
 
@@ -94,7 +93,7 @@ export default defineComponent({
     <g
       v-bind="getAttrs()"
     >
-      <use :xlink:href="'#' + icon" />
+      <use :xlink:href="`#${icon}`" />
     </g>
   </svg>
 </template>
