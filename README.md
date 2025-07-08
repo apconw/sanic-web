@@ -96,7 +96,7 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
    
 2. **Dify配置**
    - 添加Dify大模型提供商Ollama,配置Qwen2.5模型和DeepSeek R1模型
-   - 导入项目根目录下的**docker/dify/数据问答_v1.1.4_deepseek.yml画布** 
+   - 导入项目根目录下的**docker/dify/数据问答_v1.1.5_deepseek.yml画布** 
    - 获取画布对应的api-key先复制出来下面步骤会使用
    - 导入画布后需要手动选择一下你本地配置的大模型并保存
 
@@ -156,6 +156,8 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
 5. **访问服务**
  - 前端服务：http://localhost:8081
 
+## 集成mcp-server-chart配置参考
+- 具体步骤参考语雀:https://www.yuque.com/lihuan-ulutg/kb/eqier012gbin4rb2
 
 ## 🛠️ **本地开发**
 - 第一步克隆代码到本地
