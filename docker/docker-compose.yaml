@@ -55,3 +55,15 @@ services:
     volumes:
       - ./volume/mysql/data:/var/lib/mysql
       - ./my.cnf:/etc/mysql/conf.d/my.cnf
+
+  mcphub:
+    image: samanhappy/mcphub
+    container_name: mcphub
+    ports:
+      - "13000:3000"
+    stdin_open: true
+    tty: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./volume/mcp-data/data:/app/data
