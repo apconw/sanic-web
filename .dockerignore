@@ -1,6 +1,6 @@
 .git/
 .idea/
-docker/
-tests/
-web/
-images/
+src/docker/
+src/tests/
+src/web/
+src/images/

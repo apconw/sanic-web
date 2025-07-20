@@ -55,10 +55,10 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
 - **灵活部署**：支持大模型应用开发各依赖组件docker-compose一键拉起快速部署零配置
 
 ## 运行效果
-![image](./images/chat-04.gif)
-![image](./images/chat-05.png)
-![image](./images/chat-01.png)
-![image](./images/chat-02.png)
+![image](./src/images/chat-04.gif)
+![image](./src/images/chat-05.png)
+![image](./src/images/chat-01.png)
+![image](./src/images/chat-02.png)
 
 
 ## 💡环境配置要求
@@ -71,7 +71,7 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
 
 ## 🔧 **前置条件**
 * Python 3.11.x
-* Poetry 1.8.3+
+* uv 0.8.0+
 * Dify 0.7.1+
 * Mysql 8.0+
 * Node.js 18.12.x+
@@ -91,24 +91,24 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
    - Dify本机访问地址：http://localhost:18000 账号/密码: 需自己注册 
    ```bash
    # 拉起内置的dify服务
-   cd docker/dify/docker
+   cd src/docker/dify/docker
    docker-compose up -d
    
 2. **Dify配置**
    - 添加Dify大模型提供商Ollama,配置Qwen2.5模型和DeepSeek R1模型
-   - 导入项目根目录下的**docker/dify/数据问答_v1.1.4_deepseek.yml画布** 
+   - 导入项目根目录下的**src/docker/dify/数据问答_v1.1.4_deepseek.yml画布** 
    - 获取画布对应的api-key先复制出来下面步骤会使用
    - 导入画布后需要手动选择一下你本地配置的大模型并保存
 
-![image](./images/llm-setting.png)
-![image](./images/llm-setting-deepseek.png)
-![image](./images/import-convas.png)
-![image](./images/convas-api-key.png)
+![image](./src/images/llm-setting.png)
+![image](./src/images/llm-setting-deepseek.png)
+![image](./src/images/import-convas.png)
+![image](./src/images/convas-api-key.png)
    
 ## 🚀 **快速体验**
    - 具体步骤如下：
    - 第一步克隆代码到本地
-   - 第二步参考上面**大模型部署**先安装Ollama部署Qwen2.5模型和DeepSeek R1模型
+   - 第二步参考上面**大模型部署**先安装Ollama部署Qwen2.5模型或DeepSeek R1模型 或直接使用阿里云公网APIKEY形式
    - 第三步Dify环境配置直接参考上面**Dify环境配置** **这步很重要!!!!**
    - 第四步启动服务具体步骤如下:
 
@@ -122,7 +122,7 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
 
    ```bash
    # 拉起前后端服务和中间件
-   cd docker
+   cd /src/docker
    docker compose up -d
    
 3. **Minio配置**
@@ -132,7 +132,7 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
 
    ```bash
    # 重新拉起前后端服务和中间件
-   cd docker
+   cd /src/docker
    docker compose up -d
 
 4. **数据初始化**
@@ -143,12 +143,12 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
    
    # Mac or Linux 用户执行
    
-   cd docker
+   cd /src/docker
    ./init_data.sh
    
    # Windows 用户执行
    
-   cd common
+   cd /src/common
    python initialize_mysql.py
    
    
@@ -159,25 +159,41 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
 
 ## 🛠️ **本地开发**
 - 第一步克隆代码到本地
-- 第二步参考上面**大模型部署**先安装Ollama部署Qwen2.5模型和DeepSeek R1模型
+- 第二步参考上面**大模型部署**先安装Ollama部署Qwen2.5模型和DeepSeek R1模型 或直接使用阿里云公网APIKEY形式
 - 第三步本地开发环境Dify配置，参考上面 **Dify环境配置里 获取Dify画布的api-key 同时修改.env.dev文件里面的DIFY_DATABASE_QA_API_KEY**
 - 第四步本地开发环境Minio配置,修改env.dev文件里面的Minio相关密钥信息
 - 第五步安装前后端项目依赖并启动前后端服务具体步骤如下:
 
 1. **后端依赖安装**  
-   - poetry安装 [参考poetry官方文档](https://python-poetry.org/docs/)
+   - uv安装 [参考uv官方文档](https://docs.astral.sh/uv/getting-started/installation/)
    ```bash
-   # 安装poetry
-   pip install poetry
+   # 安装uv
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    
-   # 安装依赖根目录执行
-   # 设置国内仓库
-   poetry source add --priority=primary mirrors https://pypi.tuna.tsinghua.edu.cn/simple/
-   poetry install --no-root
+   #克隆代码到本地
+   git clone https://github.com/apconw/sanic-web.git
+   
+   #进入项目目录
+   cd sanic-web
+
+   # 创建虚拟环境
+   uv venv --clear
+
+   # 激活虚拟环境
+   
+   # Mac or Linux 用户执行
+   source .venv/bin/activate
+
+   # Windows 用户执行
+   .venv\Scripts\activate
+   
+   # 安装依赖
+   uv sync --no-cache
+
 
 2. **安装中间件**
    ```bash
-   cd docker
+   cd src/docker
    docker compose up -d mysql minio
    
 3. **Minio配置**
@@ -189,12 +205,12 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
    - 如果使用本地环境mysql,初始化数据时需修改源码initialize_mysql，修改数据库连接信息即可
    ```bash
     # Mac or Linux 用户执行
-     cd docker
+     cd src/docker
      ./init_data.sh
       
     # Windows 用户执行
       
-     cd common
+     cd src/common
      python initialize_mysql.py
 
 5. **前端依赖安装**  
@@ -243,9 +259,9 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
 - 大模型应用交流群欢迎大家, 欢迎加进群讨论分享经验
 - 关注下面的公众号点击·**微信群**菜单添加微信拉你入群
 
-|                 微信群                 |
-|:-----------------------------------:|
-| ![image](./images/wchat-search.png) | 
+|                   微信群                   |
+|:---------------------------------------:|
+| ![image](./src/images/wchat-search.png) | 
 
 ## License
 

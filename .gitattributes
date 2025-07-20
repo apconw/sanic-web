@@ -1,5 +1,0 @@
-*.ts linguist-language=TypeScript
-*.js linguist-language=TypeScript
-*.cjs linguist-language=TypeScript
-*.mjs linguist-language=TypeScript
-*.html linguist-language=TypeScript

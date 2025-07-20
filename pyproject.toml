@@ -1,51 +1,58 @@
-[tool.poetry]
+[project]
 name = "app"
 version = "0.1.0"
 description = ""
-package-mode = true
-authors = ["lihuan <343397495@qq.com>"]
+authors = [
+    { name = "lihuan", email = "343397495@qq.com" }
+]
 readme = "README.md"
+requires-python = ">=3.10,<4.0"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-sanic = "^24.6.0"
-sqlalchemy = "^2.0.31"
-aiomysql = "^0.2.0"
-requests = "^2.32.3"
-redis = "^5.0.7"
-pytest = "^8.3.2"
-numpy = "1.26.4"
-pyyaml = "^6.0.1"
-duckdb = "^1.0.0"
-openpyxl = "^3.1.5"
-seaborn = "^0.13.2"
-langchain = "^0.2.14"
-pdfplumber = "^0.11.3"
-python-docx = "^1.1.2"
-ollama = "^0.3.1"
-langchain-community = "^0.2.12"
-python-dotenv = "^1.0.1"
-pandasai = "^2.2.15"
-minio = "^7.2.8"
-pyjwt = "^2.9.0"
-selenium = "^4.26.0"
-bs4 = "^0.0.2"
-sanic-ext = "^23.12.0"
-mammoth = "^1.9.0"
-markdownify = "^0.14.1"
-pymupdf = "^1.25.2"
-beautifulsoup4 = "^4.13.3"
-lxml = "^5.3.1"
-selenium-stealth = "^1.0.6"
 
-[[tool.poetry.source]]
-name = "tsinghua"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-priority = "primary"
+dependencies = [
+    "sanic>=24.6.0,<25.0.0",
+    "sqlalchemy>=2.0.31,<3.0.0",
+    "aiomysql>=0.2.0,<0.3.0",
+    "requests>=2.32.3,<3.0.0",
+    "redis>=5.0.7,<6.0.0",
+    "pytest>=8.3.2,<9.0.0",
+    "numpy==1.26.4",
+    "pyyaml>=6.0.1,<7.0.0",
+    "duckdb>=1.0.0,<2.0.0",
+    "openpyxl>=3.1.5,<4.0.0",
+    "seaborn>=0.13.2,<0.14.0",
+    "langchain>=0.2.14,<0.3.0",
+    "pdfplumber>=0.11.3,<0.12.0",
+    "python-docx>=1.1.2,<2.0.0",
+    "ollama>=0.3.1,<0.4.0",
+    "langchain-community>=0.2.12,<0.3.0",
+    "python-dotenv>=1.0.1,<2.0.0",
+    "pandasai>=2.2.15,<3.0.0",
+    "minio>=7.2.8,<8.0.0",
+    "pyjwt>=2.9.0,<3.0.0",
+    "selenium>=4.26.0,<5.0.0",
+    "bs4>=0.0.2,<0.1.0",
+    "sanic-ext>=23.12.0,<24.0.0",
+    "mammoth>=1.9.0,<2.0.0",
+    "markdownify>=0.14.1,<0.15.0",
+    "pymupdf>=1.25.2,<2.0.0",
+    "beautifulsoup4>=4.13.3,<5.0.0",
+    "lxml>=5.3.1,<6.0.0",
+    "selenium-stealth>=1.0.6,<2.0.0",
+    "pymysql>=1.1.1",
+]
+
+[project.urls]
+homepage = "https://example.com"
+
+#[[project.source]]
+#name = "tsinghua"
+#url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+#priority = "primary"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools<81"]
+build-backend = "setuptools.build_meta:__legacy__"
 
 # 格式化代码插件
 [tool.black]

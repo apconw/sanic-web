@@ -32,7 +32,7 @@ services:
     environment:
       - ENV=test
       - DIFY_SERVER_URL=http://host.docker.internal:18000
-      - DIFY_DATABASE_QA_API_KEY=app-wBZqS3Zf5trr453bvtZ7QF7F
+      - DIFY_DATABASE_QA_API_KEY=app-GIz9dM9GPUXVZOkDRaC0TOxh
       - MINIO_ENDPOINT=host.docker.internal:19000
       - MINIO_ACCESS_KEY=sIR5eeDkiwoo779yNJbw
       - MiNIO_SECRET_KEY=MreuQ3aC1ymHJeo3QfzSg7aPz7PqlxeOw39nZUdE

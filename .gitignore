@@ -3,26 +3,26 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-tests/
-docker/volume/
-docker/dify/volumes/*
-!docker/dify/docker/volumes/myscale/config/users.d/custom_users_config.xml
-!docker/dify/docker/volumes/oceanbase/init.d/vec_memory.sql
-!docker/dify/docker/volumes/opensearch/opensearch_dashboards.yml
-!docker/dify/docker/volumes/sandbox/conf/config.yaml
-!docker/dify/docker/volumes/sandbox/conf/config.yaml.example
-!docker/dify/docker/volumes/sandbox/dependencies/python-requirements.txt
+src/tests/
+src/docker/volume/
+src/docker/dify/volumes/*
+!src/docker/dify/docker/volumes/myscale/config/users.d/custom_users_config.xml
+!src/docker/dify/docker/volumes/oceanbase/init.d/vec_memory.sql
+!src/docker/dify/docker/volumes/opensearch/opensearch_dashboards.yml
+!src/docker/dify/docker/volumes/sandbox/conf/config.yaml
+!src/docker/dify/docker/volumes/sandbox/conf/config.yaml.example
+!src/docker/dify/docker/volumes/sandbox/dependencies/python-requirements.txt
 
 
 
 
 
-web/node_modules/
-web/dist/
+src/web/node_modules/
+src/web/dist/
 
 .DS_Store
 .idea/
 .venv/
-logs/
+src/logs/
 # 环境变量文件
 .pytest_cache/
