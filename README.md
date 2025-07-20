@@ -35,15 +35,15 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
 
 
 
-|             微信             |
-|:--------------------------:| 
-| ![image](./images/img.png) | 
+|               微信               |
+|:------------------------------:| 
+| ![image](./src/images/img.png) | 
 
 
 
 
 ## 架构方案
-![image](./images/app-01.png)
+![image](./src/images/app-01.png)
 
 ## 🎉 **特性**
 - **核心技术栈**：Dify + Ollama + RAG + (Qwen2.5/DeepSeek) + Text2SQL
