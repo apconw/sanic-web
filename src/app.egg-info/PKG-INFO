@@ -1,3 +1,41 @@
+Metadata-Version: 2.4
+Name: app
+Version: 0.1.0
+Author-email: lihuan <343397495@qq.com>
+Project-URL: homepage, https://example.com
+Requires-Python: <3.12,>=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: sanic<25.0.0,>=24.6.0
+Requires-Dist: sqlalchemy<3.0.0,>=2.0.31
+Requires-Dist: aiomysql<0.3.0,>=0.2.0
+Requires-Dist: requests<3.0.0,>=2.32.3
+Requires-Dist: redis<6.0.0,>=5.0.7
+Requires-Dist: pytest<9.0.0,>=8.3.2
+Requires-Dist: numpy==1.26.4
+Requires-Dist: pyyaml<7.0.0,>=6.0.1
+Requires-Dist: duckdb<2.0.0,>=1.0.0
+Requires-Dist: openpyxl<4.0.0,>=3.1.5
+Requires-Dist: seaborn<0.14.0,>=0.13.2
+Requires-Dist: langchain<0.3.0,>=0.2.14
+Requires-Dist: pdfplumber<0.12.0,>=0.11.3
+Requires-Dist: python-docx<2.0.0,>=1.1.2
+Requires-Dist: ollama<0.4.0,>=0.3.1
+Requires-Dist: langchain-community<0.3.0,>=0.2.12
+Requires-Dist: python-dotenv<2.0.0,>=1.0.1
+Requires-Dist: pandasai<3.0.0,>=2.2.15
+Requires-Dist: minio<8.0.0,>=7.2.8
+Requires-Dist: pyjwt<3.0.0,>=2.9.0
+Requires-Dist: selenium<5.0.0,>=4.26.0
+Requires-Dist: bs4<0.1.0,>=0.0.2
+Requires-Dist: sanic-ext<24.0.0,>=23.12.0
+Requires-Dist: mammoth<2.0.0,>=1.9.0
+Requires-Dist: markdownify<0.15.0,>=0.14.1
+Requires-Dist: pymupdf<2.0.0,>=1.25.2
+Requires-Dist: beautifulsoup4<5.0.0,>=4.13.3
+Requires-Dist: lxml<6.0.0,>=5.3.1
+Requires-Dist: selenium-stealth<2.0.0,>=1.0.6
+Requires-Dist: pymysql>=1.1.1
+
 # 大模型数据助手
 [![English](https://img.shields.io/badge/English-Click-yellow)](README-en.md)
 
@@ -189,14 +227,6 @@ https://github.com/user-attachments/assets/923758a3-4879-4836-852b-691413da372e
    
    # 安装依赖
    uv sync --no-cache
-   
-   # pycharm 配置虚拟环境
-   File -> Settings -> Project: sanic-web -> Project Interpreter -> Add -> Existing environment
-   选择.venv目录
-   
-   # pycharm 选择src目录为项目根目录
-   File -> Settings -> Project: sanic-web -> Project Structure -> Sources
-   选择src目录
 
 
 2. **安装中间件**

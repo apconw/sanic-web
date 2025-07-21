@@ -16,7 +16,7 @@ src/docker/dify/volumes/*
 
 
 
-
+src/app.egg-info/
 src/web/node_modules/
 src/web/dist/
 
