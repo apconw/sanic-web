@@ -71,7 +71,7 @@ function newChat() {
     return
   }
   showDefaultPage.value = true
-  isInit.value = false
+  isInit.value = true
   conversationItems.value = []
   stylizingLoading.value = false
   suggested_array.value = []
@@ -246,7 +246,7 @@ const handleCreateStylized = async (send_text = '') => {
 
   // 若正在加载，则点击后恢复初始状态
   if (stylizingLoading.value) {
-      // 停止dify 对话
+    // 停止dify 对话
     // console.log('停止dify 对话', businessStore.$state.task_id)
     await GlobalAPI.stop_chat(businessStore.$state.task_id, qa_type.value)
     onCompletedReader(conversationItems.value.length - 1)
@@ -1426,6 +1426,7 @@ const collapsed = useLocalStorage(
 
 
 /** 自定义对话历史表格滚动条样式 */
+
 .scrollable-table-container {
   overflow-y: hidden; /* 默认隐藏滚动条 */
   height: 100%; /* 根据实际情况调整高度 */
@@ -1436,6 +1437,7 @@ const collapsed = useLocalStorage(
 }
 
 /* 隐藏滚动条轨道 */
+
 .scrollable-table-container::-webkit-scrollbar {
   width: 4px; /* 滚动条宽度 */
 }

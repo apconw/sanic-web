@@ -100,7 +100,7 @@ export const fetchConversationHistory = async function fetchConversationHistory(
     // 清空现有的 conversationItems
     conversationItems.value = []
 
-    const res = await GlobalAPI.query_user_qa_record(1, 999999, searchText,row?.chat_id)
+    const res = await GlobalAPI.query_user_qa_record(1, 999999, searchText, row?.chat_id)
     if (res.status === 401) {
       userStore.logout()
       setTimeout(() => {
@@ -111,10 +111,10 @@ export const fetchConversationHistory = async function fetchConversationHistory(
       if (data && Array.isArray(data.data?.records)) {
         const records = data.data.records
 
-         // 初始化左右对话侧列表数据
-         if (isInit.value) {
+        // 初始化左右对话侧列表数据
+        if (isInit.value) {
           tableData.value = records.map((chat: any, index: number) => ({
-            uuid:chat.uuid,
+            uuid: chat.uuid,
             key: chat.question.trim(),
             chat_id: chat.chat_id,
           }))
@@ -131,7 +131,7 @@ export const fetchConversationHistory = async function fetchConversationHistory(
           // 文件key
           let file_key_str = ''
           // 自定义id
-          let uuid_str=''
+          let uuid_str = ''
           const streamDataArray: StreamData[] = [];
           [
             'question',
@@ -140,7 +140,7 @@ export const fetchConversationHistory = async function fetchConversationHistory(
             'qa_type',
             'chat_id',
             'file_key',
-            'uuid'
+            'uuid',
           ].forEach((key: string) => {
             if (record.hasOwnProperty(key)) {
               switch (key) {
