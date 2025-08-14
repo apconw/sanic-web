@@ -1,3 +1,5 @@
+[![MSeeP.ai Security Assessment Badge](https://mseep.net/pr/apconw-sanic-web-badge.png)](https://mseep.ai/app/apconw-sanic-web)
+
 # 大模型数据助手
 [![English](https://img.shields.io/badge/English-Click-yellow)](README-en.md)
 
