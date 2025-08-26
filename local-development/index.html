@@ -358,16 +358,16 @@
         <li class="md-nav__item">
   <a href="#1" class="md-nav__link">
     <span class="md-ellipsis">
-      1. 克隆仓库
+      1. 后端依赖安装
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2" class="md-nav__link">
+  <a href="#2-envdev" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 后端依赖安装
+      2. 修改.env.dev配置文件
     </span>
   </a>
   
@@ -376,16 +376,16 @@
         <li class="md-nav__item">
   <a href="#3" class="md-nav__link">
     <span class="md-ellipsis">
-      3. 安装中间件
+      3. 初始化数据库
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-envdev" class="md-nav__link">
+  <a href="#4" class="md-nav__link">
     <span class="md-ellipsis">
-      4. 修改.env.dev配置文件
+      4. 前端依赖安装
     </span>
   </a>
   
@@ -394,7 +394,7 @@
         <li class="md-nav__item">
   <a href="#5" class="md-nav__link">
     <span class="md-ellipsis">
-      5. 初始化数据库
+      5. 启动后端服务
     </span>
   </a>
   
@@ -403,7 +403,7 @@
         <li class="md-nav__item">
   <a href="#6" class="md-nav__link">
     <span class="md-ellipsis">
-      6. 前端依赖安装
+      6. 访问服务
     </span>
   </a>
   
@@ -412,25 +412,7 @@
         <li class="md-nav__item">
   <a href="#7" class="md-nav__link">
     <span class="md-ellipsis">
-      7. 启动后端服务
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#8" class="md-nav__link">
-    <span class="md-ellipsis">
-      8. 访问服务
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#9" class="md-nav__link">
-    <span class="md-ellipsis">
-      9. 构建镜像
+      7. 构建镜像
     </span>
   </a>
   
@@ -493,16 +475,16 @@
         <li class="md-nav__item">
   <a href="#1" class="md-nav__link">
     <span class="md-ellipsis">
-      1. 克隆仓库
+      1. 后端依赖安装
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2" class="md-nav__link">
+  <a href="#2-envdev" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 后端依赖安装
+      2. 修改.env.dev配置文件
     </span>
   </a>
   
@@ -511,16 +493,16 @@
         <li class="md-nav__item">
   <a href="#3" class="md-nav__link">
     <span class="md-ellipsis">
-      3. 安装中间件
+      3. 初始化数据库
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-envdev" class="md-nav__link">
+  <a href="#4" class="md-nav__link">
     <span class="md-ellipsis">
-      4. 修改.env.dev配置文件
+      4. 前端依赖安装
     </span>
   </a>
   
@@ -529,7 +511,7 @@
         <li class="md-nav__item">
   <a href="#5" class="md-nav__link">
     <span class="md-ellipsis">
-      5. 初始化数据库
+      5. 启动后端服务
     </span>
   </a>
   
@@ -538,7 +520,7 @@
         <li class="md-nav__item">
   <a href="#6" class="md-nav__link">
     <span class="md-ellipsis">
-      6. 前端依赖安装
+      6. 访问服务
     </span>
   </a>
   
@@ -547,25 +529,7 @@
         <li class="md-nav__item">
   <a href="#7" class="md-nav__link">
     <span class="md-ellipsis">
-      7. 启动后端服务
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#8" class="md-nav__link">
-    <span class="md-ellipsis">
-      8. 访问服务
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#9" class="md-nav__link">
-    <span class="md-ellipsis">
-      9. 构建镜像
+      7. 构建镜像
     </span>
   </a>
   
@@ -605,74 +569,67 @@
 
   <h1>🛠️ 本地开发</h1>
 
-<p>确保你已安装并配置了所需的环境</p>
-<h2 id="1">1. 克隆仓库</h2>
-<pre><code class="language-bash">git clone https://github.com/apconw/sanic-web.git
-</code></pre>
-<h2 id="2">2. 后端依赖安装</h2>
+<p>确保上一步<a href="../environment/">环境配置</a>已配置好</p>
+<h2 id="1">1. 后端依赖安装</h2>
 <ul>
 <li>uv安装 <a href="https://docs.astral.sh/uv/getting-started/installation/">参考uv官方文档</a></li>
 </ul>
-<pre><code class="language-bash">   # 安装uv
-   curl -LsSf https://astral.sh/uv/install.sh | sh
+<pre><code class="language-bash"># 安装uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-   #进入项目目录
-   cd sanic-web
+#进入项目目录
+cd sanic-web
 
-   # 创建虚拟环境
-   uv venv --clear
+# 创建虚拟环境
+uv venv --clear
 
-   # 激活虚拟环境
+# 激活虚拟环境
 
-   # Mac or Linux 用户执行
-   source .venv/bin/activate
+# Mac or Linux 用户执行
+source .venv/bin/activate
 
-   # Windows 用户执行
-   .venv\Scripts\activate
+# Windows 用户执行
+.venv\Scripts\activate
 
-   # 安装依赖
-   uv sync --no-cache
+# 安装依赖
+uv sync --no-cache
 
-   # pycharm 配置虚拟环境
-   Settings -&gt; Project: sanic-web -&gt; Project Interpreter -&gt; Add -&gt; Existing environment
-   选择.venv目录
+# pycharm 配置虚拟环境
+Settings -&gt; Project: sanic-web -&gt; Project Interpreter -&gt; Add -&gt; Existing environment
+选择.venv目录
 </code></pre>
-<h2 id="3">3. <strong>安装中间件</strong></h2>
+<h2 id="2-envdev">2. 修改.env.dev配置文件</h2>
 <ul>
-<li>启动mysql和minio容器</li>
-</ul>
-<pre><code class="language-bash">cd docker
-docker compose up -d mysql minio
-</code></pre>
-<h2 id="4-envdev">4. 修改.env.dev配置文件</h2>
-<ul>
-<li>修改minio的配置<ul>
-<li>访问MinIO服务，http://localhost:19001/ 账号:admin 密码:12345678</li>
-<li>创建一个bucket，名称filedata，同时配置Access Key</li>
-<li>修改.evn.dev里的MINIO_开头的密钥消息</li>
-</ul>
-</li>
-<li>修改大模型&amp;MCP-HUB配置<ul>
-<li>修改<strong>MODEL_BASE_URL</strong> 公网大模型服务地址默认使用阿里云公网大模型服务</li>
-<li>修改<strong>MODEL_NAME</strong> 大模型名称如qwen-plus</li>
-<li>修改<strong>MODEL_API_KEY</strong> 大模型服务API-KEY</li>
-<li>修改<strong>MCP_HUB_URL</strong> MCP_HUB服务地址本地启动,默认不用修改</li>
+<li>根据实际情况修改一下配置信息</li>
+<li><strong>以下配置本机启动默认不用修改在服务器上启动时localhost需修改为实际IP地址</strong><ul>
+<li>可修改<strong>MYSQL_HOST</strong> MySQL数据服务地址</li>
+<li>可修改<strong>SQLALCHEMY_DATABASE_URI</strong> 数据库连接池地址</li>
+<li>可修改<strong>MODEL_API_KEY</strong> 大模型服务API-KEY</li>
+<li>可修改<strong>MINIO_ENDPOINT</strong> MinIO服务地址</li>
+<li>可修改<strong>DIFY_SERVER_URL</strong> Dify服务地址</li>
+<li><strong>必须修改MINIO_ACCESS_KEY</strong> MinIO服务Key</li>
+<li><strong>必须修改MINIO_SECRET_KEY</strong> MinIO服务密钥</li>
+<li><strong>必须修改DIFY_DATABASE_QA_API_KEY</strong> Dify智能体Api-Key</li>
+<li><strong>必须修改MCP_HUB_COMMON_QA_GROUP_URL</strong> 通用问答MCP-HUB工具集组地址</li>
+<li><strong>必须修改MCP_HUB_DATABASE_QA_GROUP_URL</strong> 数据问答MCP-HUB工具集组地址</li>
+<li>可修改<strong>MODEL_NAME</strong> 大模型名称如qwen-plus</li>
+<li>可修改<strong>MODEL_BASE_URL</strong> 公网大模型服务地址默认使用阿里云公网模型服务</li>
 </ul>
 </li>
 </ul>
-<h2 id="5">5. 初始化数据库</h2>
+<h2 id="3">3. 初始化数据库</h2>
 <ul>
 <li>如果使用已安装的mysql,初始化数据时需修改源码initialize_mysql里面的连接信息</li>
 </ul>
 <pre><code class="language-bash"># Mac or Linux 用户执行
 cd docker
-  ./init_data.sh
+./init_data.sh
 
 # Windows 用户执行
 cd common
-  python initialize_mysql.py
+python initialize_mysql.py
 </code></pre>
-<h2 id="6">6. 前端依赖安装</h2>
+<h2 id="4">4. 前端依赖安装</h2>
 <ul>
 <li>前端是基于开源项目<a href="https://github.com/pdsuwwz/chatgpt-vue3-light-mvp">可参考chatgpt-vue3-light-mvp安装</a>二开</li>
 </ul>
@@ -687,23 +644,23 @@ pnpm i
 #启动服务
 pnpm dev
 </code></pre>
-<h2 id="7">7. 启动后端服务</h2>
+<h2 id="5">5. 启动后端服务</h2>
 <pre><code class="language-bash">#启动后端服务
 python serv.py
 </code></pre>
-<h2 id="8">8. 访问服务</h2>
+<h2 id="6">6. 访问服务</h2>
 <ul>
 <li>前端服务：http://localhost:2048</li>
 </ul>
-<h2 id="9">9. 构建镜像</h2>
+<h2 id="7">7. 构建镜像</h2>
 <ul>
 <li>执行构建命令：</li>
 </ul>
-<pre><code class="language-bash">   # 构建前端镜像 
-   make web-build
+<pre><code class="language-bash"># 构建前端镜像 
+make web-build
 
-   # 构建后端镜像
-   make service-build
+# 构建后端镜像
+make service-build
 </code></pre>
 
 

@@ -336,7 +336,7 @@
         <li class="md-nav__item">
   <a href="#1" class="md-nav__link">
     <span class="md-ellipsis">
-      1. 克隆仓库
+      1. 启动服务
     </span>
   </a>
   
@@ -345,34 +345,16 @@
         <li class="md-nav__item">
   <a href="#2" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 启动服务
+      2. 数据初始化
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-minio" class="md-nav__link">
+  <a href="#3" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Minio配置
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. 数据初始化
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#5" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. 访问服务
+      3. 访问服务
     </span>
   </a>
   
@@ -457,7 +439,7 @@
         <li class="md-nav__item">
   <a href="#1" class="md-nav__link">
     <span class="md-ellipsis">
-      1. 克隆仓库
+      1. 启动服务
     </span>
   </a>
   
@@ -466,34 +448,16 @@
         <li class="md-nav__item">
   <a href="#2" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 启动服务
+      2. 数据初始化
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-minio" class="md-nav__link">
+  <a href="#3" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Minio配置
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. 数据初始化
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#5" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. 访问服务
+      3. 访问服务
     </span>
   </a>
   
@@ -533,60 +497,47 @@
 
   <h1>🚀 快速体验</h1>
 
-<p>确保你已安装并配置了所需的环境</p>
-<h2 id="1">1. 克隆仓库</h2>
-<pre><code class="language-bash">git clone https://github.com/apconw/sanic-web.git
-</code></pre>
-<h2 id="2">2. 启动服务</h2>
+<p>确保上一步<a href="../environment/">环境配置</a>已配置好</p>
+<h2 id="1">1. 启动服务</h2>
 <ul>
-<li>根据情况修改docker/docker-compose.yml里的环境变量的值</li>
+<li>根据情况修改<strong>docker/docker-compose.yml</strong>里<strong>chat-service</strong>服务的环境变量的值</li>
 <li><strong>以下配置本机启动默认不用修改,在服务器上部署时host.docker.internal需修改为实际IP地址</strong><ul>
 <li>可修改<strong>MYSQL_HOST</strong> MySQL数据服务地址</li>
+<li>可修改<strong>SQLALCHEMY_DATABASE_URI</strong> 数据库连接池地址</li>
 <li>可修改<strong>MODEL_API_KEY</strong> 大模型服务API-KEY</li>
-<li>可修改<strong>MCP_HUB_URL</strong> MCP_HUB服务地址</li>
 <li>可修改<strong>MINIO_ENDPOINT</strong> MinIO服务地址</li>
 <li>可修改<strong>DIFY_SERVER_URL</strong> Dify服务地址</li>
-<li>必须修改<strong>DIFY_DATABASE_QA_API_KEY</strong> Dify智能体Api-Key</li>
+<li><strong>必须修改MINIO_ACCESS_KEY</strong> MinIO服务Key</li>
+<li><strong>必须修改MINIO_SECRET_KEY</strong> MinIO服务密钥</li>
+<li><strong>必须修改DIFY_DATABASE_QA_API_KEY</strong> Dify智能体Api-Key</li>
+<li><strong>必须修改MCP_HUB_COMMON_QA_GROUP_URL</strong> 通用问答MCP-HUB工具集组地址</li>
+<li><strong>必须修改MCP_HUB_DATABASE_QA_GROUP_URL</strong> 数据问答MCP-HUB工具集组地址</li>
+<li>可修改<strong>MODEL_NAME</strong> 大模型名称如qwen-plus</li>
 <li>可修改<strong>MODEL_BASE_URL</strong> 公网大模型服务地址默认使用阿里云公网模型服务</li>
-<li>可修改<strong>MODEL_NAME</strong> 大模型名称如openai:qwen-plus <strong><em>(v1.1.5版本需要加上openai:前缀)</em></strong></li>
 </ul>
 </li>
 </ul>
-<pre><code class="language-bash">   # 拉起前后端服务和中间件
-   cd docker
-   docker compose up -d
-</code></pre>
-<h2 id="3-minio">3. Minio配置</h2>
-<ul>
-<li>访问MinIO服务，http://localhost:19001/ 账号:admin 密码:12345678</li>
-<li>创建一个bucket，名称filedata，同时配置Access Key</li>
-<li>修改docker-compose里的chat-service服务的MINIO_开头的环境变量重启服务</li>
-</ul>
-<pre><code class="language-bash"># 修改docker-compose.yml文件minio密钥
-MINIO_ACCESS_KEY
-MiNIO_SECRET_KEY
-
-# 重新拉起前后端服务和中间件
+<pre><code class="language-angular2html"># 拉起前后端服务和中间件
 cd docker
 docker compose up -d
 </code></pre>
-<h2 id="4">4. 数据初始化</h2>
+<h2 id="2">2. 数据初始化</h2>
 <ul>
 <li>如果使用已安装的mysql,初始化数据时需要修改源码initialize_mysql里面的链接信息</li>
-<li>运行初始化脚本</li>
+<li>运行初始化脚本 <strong><em>如果执行脚本报错手动复制init_sql.sql到工具里面手动执行初始化</em></strong></li>
 </ul>
-<pre><code class="language-bash">   # 安装依赖包
-   pip install pymysql
+<pre><code class="language-angular2html"># 安装依赖包
+pip install pymysql
 
-   # Mac or Linux 用户执行
-   cd docker
-   ./init_data.sh
+# Mac or Linux 用户执行
+cd docker
+./init_data.sh
 
-   # Windows 用户执行
-   cd common
-   python initialize_mysql.py
+# Windows 用户执行
+cd common
+python initialize_mysql.py
 </code></pre>
-<h2 id="5">5. <strong>访问服务</strong></h2>
+<h2 id="3">3. <strong>访问服务</strong></h2>
 <ul>
 <li>前端服务：http://localhost:8081</li>
 </ul>

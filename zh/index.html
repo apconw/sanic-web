@@ -312,6 +312,24 @@
         <li class="md-nav__item">
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
+      版本说明
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      迭代计划
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
       下一步
     </span>
   </a>
@@ -461,6 +479,24 @@
         <li class="md-nav__item">
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
+      版本说明
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      迭代计划
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
       下一步
     </span>
   </a>
@@ -515,14 +551,85 @@
 <li><strong>大模型交互</strong>: 全面支持主流大模型交互框架，如 Dify 与 LangChain</li>
 <li><strong>核心技术栈</strong>：Dify + Ollama + RAG + (Qwen3/DeepSeek) + Text2SQL + MCP</li>
 <li><strong>UI 框架</strong>：Vue 3 + TypeScript + Vite 5</li>
-<li><strong>数据问答</strong>：集成 ECharts大模型实现Text2SQL轻量级的图形化数据问答展示</li>
+<li><strong>数据问答</strong>：集成 ECharts/AntV大模型实现Text2SQL轻量级的图形化数据问答展示</li>
 <li><strong>表格问答</strong>：支持 CSV格式文件的上传与基于大模型总结预处理和Text2SQL的表格数据问答</li>
 <li><strong>通用问答</strong>：支持通用数据形式问答基于对接三方RAG系统+公网检索模式</li>
 <li><strong>应用架构</strong>：作为一个轻量级全链路一站式大模型应用开发框架方便扩展落地</li>
 <li><strong>灵活部署</strong>：支持大模型应用开发各依赖组件docker-compose一键拉起快速部署零配置
 <img alt="image" src="../images/app-01.png" /></li>
 </ul>
-<h2 id="_4">下一步</h2>
+<h2 id="_4">版本说明</h2>
+<ul>
+<li><strong>v1.1.6不兼容以前版本建议铲掉以前版本重新部署</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>功能描述</th>
+<th>使用Dify</th>
+<th>使用LangChain/MCP</th>
+<th>全库多表统计</th>
+<th>多Sheet统计</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1.1.6</td>
+<td>通用问答</td>
+<td>否</td>
+<td><strong>是</strong></td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>v1.1.6</td>
+<td>数据问答</td>
+<td>否</td>
+<td><strong>是</strong></td>
+<td><strong>支持</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>v1.1.6</td>
+<td>表格问答</td>
+<td><strong>是</strong></td>
+<td>否</td>
+<td>-</td>
+<td><strong>不支持</strong></td>
+</tr>
+<tr>
+<td>v1.1.6</td>
+<td>报告问答</td>
+<td><strong>是</strong></td>
+<td>否</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_5">迭代计划</h2>
+<ul>
+<li>数据问答<ul>
+<li>整库多表基于neo4j绘制库表血缘关系数据问答时减少上下文表信息</li>
+<li>基于lamaindex构建多表数据问答few shot检索增强提高模型效果</li>
+</ul>
+</li>
+<li>表格问答<ul>
+<li>集成MCP多智能体架构支持多维度表格统计</li>
+</ul>
+</li>
+<li>报告问答<ul>
+<li>基于文件上传分析构建特定文件报告以图表形式展示</li>
+</ul>
+</li>
+<li>通用智能体<ul>
+<li>集成MCP多智能体架构支持如DeepSearch等通用能力场景</li>
+</ul>
+</li>
+<li><strong>欢迎有想法的同学参与贡献欢迎加入</strong></li>
+</ul>
+<h2 id="_6">下一步</h2>
 <ul>
 <li><a href="environment/">环境配置</a> - 配置DIFY环境/MCP环境</li>
 <li><a href="quick-start/">快速体验</a> -  容器启动快速体验</li>
