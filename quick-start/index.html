@@ -501,7 +501,9 @@
 <h2 id="1">1. 启动服务</h2>
 <ul>
 <li>根据情况修改<strong>docker/docker-compose.yml</strong>里<strong>chat-service</strong>服务的环境变量的值</li>
-<li><strong>以下配置本机启动默认不用修改,在服务器上部署时host.docker.internal需修改为实际IP地址</strong><ul>
+<li>
+<p><strong>以下配置本机启动默认不用修改,在服务器上部署时host.docker.internal需修改为实际IP地址</strong></p>
+<ul>
 <li>可修改<strong>MYSQL_HOST</strong> MySQL数据服务地址</li>
 <li>可修改<strong>SQLALCHEMY_DATABASE_URI</strong> 数据库连接池地址</li>
 <li>可修改<strong>MODEL_API_KEY</strong> 大模型服务API-KEY</li>
@@ -514,6 +516,12 @@
 <li><strong>必须修改MCP_HUB_DATABASE_QA_GROUP_URL</strong> 数据问答MCP-HUB工具集组地址</li>
 <li>可修改<strong>MODEL_NAME</strong> 大模型名称如qwen-plus</li>
 <li>可修改<strong>MODEL_BASE_URL</strong> 公网大模型服务地址默认使用阿里云公网模型服务</li>
+</ul>
+</li>
+<li>
+<p>根据情况修改<strong>docker/docker-compose.yml里chat-web</strong>前端<strong>nginx.conf</strong>配置文件</p>
+<ul>
+<li>服务器部署,请修改<strong>docker/nginx.conf</strong>文件将<strong>host.docker.internal</strong>修改为实际IP地址</li>
 </ul>
 </li>
 </ul>
