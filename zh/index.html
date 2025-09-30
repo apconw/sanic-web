@@ -539,17 +539,17 @@
 <h2 id="_2">什么是大模型数据助手?</h2>
 <p>一个轻量级、支持全链路且易于二次开发的大模型应用项目 </p>
 <p><strong>已集成MCP多智能体架构</strong></p>
-<p>基于 <strong>Dify 、LangChain/LangGraph、Lamaindex、MCP、Ollama&amp;Vllm、Sanic 和 Text2SQL</strong> 📊 等技术构建的一站式大模型应用开发项目，采用 
+<p>基于 <strong>Dify 、LangChain/LangGraph、llamaIndex、Noe4j、MCP、Ollama&amp;Vllm、Sanic 和 Text2SQL</strong> 📊 等技术构建的一站式大模型应用开发项目，采用 
 <strong>Vue3、TypeScript</strong> 和 
 <strong>Vite 5</strong> 
-打造现代UI。它支持通过 <strong>ECharts</strong> 📈 / <strong>AntV</strong>
+打造现代UI。它支持通过 <strong>ECharts</strong> 📈 / <strong>AntV(mcp-server-chart)</strong>
 实现基于大模型的数据图形化问答，具备处理 <strong>CSV</strong> 文件 📂 表格问答的能力。同时，能方便对接第三方开源 <strong>RAG</strong> 系统 检索系统 🌐等，以支持广泛的通用知识问答。</p>
 <p>作为轻量级的大模型应用开发项目，<strong>Sanic-Web</strong> 🛠️ 支持快速迭代与扩展，助力大模型项目快速落地。🚀</p>
 <h2 id="_3">整体架构</h2>
 <ul>
 <li><strong>多智能体</strong>: 支持多模型、多智能体+MCP协同任务</li>
 <li><strong>大模型交互</strong>: 全面支持主流大模型交互框架，如 Dify 与 LangChain</li>
-<li><strong>核心技术栈</strong>：Dify + Ollama + RAG + (Qwen3/DeepSeek) + Text2SQL + MCP</li>
+<li><strong>核心技术栈</strong>：Dify + Ollama + RAG + (Qwen3/DeepSeek) + Text2SQL + MCP + Neo4J + LangGraph</li>
 <li><strong>UI 框架</strong>：Vue 3 + TypeScript + Vite 5</li>
 <li><strong>数据问答</strong>：集成 ECharts/AntV大模型实现Text2SQL轻量级的图形化数据问答展示</li>
 <li><strong>表格问答</strong>：支持 CSV格式文件的上传与基于大模型总结预处理和Text2SQL的表格数据问答</li>
@@ -560,7 +560,7 @@
 </ul>
 <h2 id="_4">版本说明</h2>
 <ul>
-<li><strong>v1.1.7不兼容v1.1.6以下的版本建议铲掉重新部署</strong></li>
+<li><strong>v1.1.8不兼容v1.1.7以下的版本建议铲掉重新部署</strong></li>
 </ul>
 <table>
 <thead>
@@ -575,15 +575,15 @@
 </thead>
 <tbody>
 <tr>
-<td>v1.1.7</td>
-<td>通用问答</td>
+<td>v1.1.8</td>
+<td>智能问答</td>
 <td>否</td>
 <td><strong>是</strong></td>
 <td>-</td>
 <td>-</td>
 </tr>
 <tr>
-<td>v1.1.7</td>
+<td>v1.1.8</td>
 <td>数据问答</td>
 <td>否</td>
 <td><strong>是</strong></td>
@@ -591,7 +591,7 @@
 <td>-</td>
 </tr>
 <tr>
-<td>v1.1.7</td>
+<td>v1.1.8</td>
 <td>表格问答</td>
 <td><strong>是</strong></td>
 <td>否</td>
@@ -599,8 +599,8 @@
 <td><strong>不支持</strong></td>
 </tr>
 <tr>
-<td>v1.1.7</td>
-<td>报告问答</td>
+<td>v1.1.8</td>
+<td>深度搜索</td>
 <td><strong>是</strong></td>
 <td>否</td>
 <td>-</td>
@@ -611,20 +611,21 @@
 <h2 id="_5">迭代计划</h2>
 <ul>
 <li>数据问答<ul>
-<li>整库多表基于neo4j/embedding绘制库表血缘关系数据问答时减少上下文表信息</li>
-<li>基于lamaindex构建多表数据问答few shot检索增强提高模型效果</li>
+<li>整库多表基于neo4j绘制库表血缘关系数据问答时减少上下文表信息 (<strong>已经实现</strong>)</li>
+<li>引入 Embedding + 向量检索 作为 BM25 的补充（处理同义词、泛化）</li>
+<li>基于llamaIndex构建多表数据问答few shot检索增强提高模型效果</li>
 </ul>
 </li>
 <li>表格问答<ul>
-<li>集成MCP多智能体架构支持多维度表格统计</li>
+<li>使用LangGraph构建基于大模型多表格文件联合分析</li>
 </ul>
 </li>
-<li>报告问答<ul>
-<li>基于文件上传分析构建特定文件报告以图表形式展示</li>
+<li>深度搜索<ul>
+<li>基于Dify实现深度搜索功能</li>
 </ul>
 </li>
 <li>通用智能体<ul>
-<li>集成MCP多智能体架构支持如DeepSearch等通用能力场景</li>
+<li>参考各大开源智能体框架实现对应功能</li>
 </ul>
 </li>
 <li><strong>欢迎有想法的同学参与贡献欢迎加入</strong></li>
@@ -658,6 +659,12 @@
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
       </main>
       
         <footer class="md-footer">
@@ -690,7 +697,7 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tooltips", "navigation.expand"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tooltips", "navigation.top", "navigation.expand"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.92b07e13.min.js"></script>

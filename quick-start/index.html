@@ -500,28 +500,34 @@
 <p>确保上一步<a href="../environment/">环境配置</a>已配置好</p>
 <h2 id="1">1. 启动服务</h2>
 <ul>
-<li>根据情况修改<strong>docker/docker-compose.yml</strong>里<strong>chat-service</strong>服务的环境变量的值</li>
 <li>
-<p><strong>以下配置本机启动默认不用修改,在服务器上部署时host.docker.internal需修改为实际IP地址</strong></p>
+<p>根据情况修改根目录下的<strong>docker/docker-compose.yml</strong>里<strong>chat-service</strong>服务的环境变量的值</p>
 <ul>
+<li><strong>以下配置本机启动默认不用修改,在服务器上部署时host.docker.internal需修改为实际IP地址</strong></li>
+<li><strong>1、非必需修改项</strong>:</li>
 <li>可修改<strong>MYSQL_HOST</strong> MySQL数据服务地址</li>
 <li>可修改<strong>SQLALCHEMY_DATABASE_URI</strong> 数据库连接池地址</li>
 <li>可修改<strong>MODEL_API_KEY</strong> 大模型服务API-KEY</li>
 <li>可修改<strong>MINIO_ENDPOINT</strong> MinIO服务地址</li>
 <li>可修改<strong>DIFY_SERVER_URL</strong> Dify服务地址</li>
+<li>可修改<strong>MODEL_NAME</strong> 大模型名称如qwen-plus</li>
+<li>可修改<strong>MODEL_BASE_URL</strong> 公网大模型服务地址默认使用阿里云公网模型服务</li>
+<li>可修改<strong>SHOW_THINKING_PROCESS</strong> 是否显示大模型思考过程</li>
+<li>可修改<strong>NEO4J_URI</strong>  Neo4j数据库连接地址</li>
+<li>可修改<strong>NEO4J_USER</strong> Neo4j数据库用户名</li>
+<li>可修改<strong>NEO4J_PASSWORD</strong> Neo4j数据库密码</li>
+<li><strong>2、必须修改项</strong>:</li>
 <li><strong>必须修改MINIO_ACCESS_KEY</strong> MinIO服务Key</li>
 <li><strong>必须修改MINIO_SECRET_KEY</strong> MinIO服务密钥</li>
 <li><strong>必须修改DIFY_DATABASE_QA_API_KEY</strong> Dify智能体Api-Key</li>
 <li><strong>必须修改MCP_HUB_COMMON_QA_GROUP_URL</strong> 通用问答MCP-HUB工具集组地址</li>
 <li><strong>必须修改MCP_HUB_DATABASE_QA_GROUP_URL</strong> 数据问答MCP-HUB工具集组地址</li>
-<li>可修改<strong>MODEL_NAME</strong> 大模型名称如qwen-plus</li>
-<li>可修改<strong>MODEL_BASE_URL</strong> 公网大模型服务地址默认使用阿里云公网模型服务</li>
 </ul>
 </li>
 <li>
 <p>根据情况修改<strong>docker/docker-compose.yml里chat-web</strong>前端<strong>nginx.conf</strong>配置文件</p>
 <ul>
-<li>服务器部署,请修改<strong>docker/nginx.conf</strong>文件将<strong>host.docker.internal</strong>修改为实际IP地址</li>
+<li>服务器部署,请修改根目录下的<strong>docker/nginx.conf</strong>文件将<strong>host.docker.internal</strong>修改为实际IP地址</li>
 </ul>
 </li>
 </ul>
@@ -569,6 +575,12 @@ python initialize_mysql.py
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
       </main>
       
         <footer class="md-footer">
@@ -601,7 +613,7 @@ python initialize_mysql.py
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tooltips", "navigation.expand"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tooltips", "navigation.top", "navigation.expand"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.92b07e13.min.js"></script>
