@@ -2,84 +2,84 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>None./</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="None"/>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/"/>
     </url>
     <url>
         <loc>Noneenvironment/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="Noneenvironment/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/environment/"/>
     </url>
     <url>
         <loc>Nonefaq/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="Nonefaq/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/faq/"/>
     </url>
     <url>
         <loc>Nonelocal-development/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="Nonelocal-development/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/local-development/"/>
     </url>
     <url>
         <loc>Nonequick-start/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="Nonequick-start/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/quick-start/"/>
     </url>
     <url>
         <loc>Noneblog/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="Noneblog/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/blog/"/>
     </url>
     <url>
         <loc>Nonezh/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/"/>
         <xhtml:link rel="alternate" hreflang="en" href="None"/>
     </url>
     <url>
         <loc>Nonezh/environment/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/environment/"/>
         <xhtml:link rel="alternate" hreflang="en" href="Noneenvironment/"/>
     </url>
     <url>
         <loc>Nonezh/faq/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/faq/"/>
         <xhtml:link rel="alternate" hreflang="en" href="Nonefaq/"/>
     </url>
     <url>
         <loc>Nonezh/local-development/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/local-development/"/>
         <xhtml:link rel="alternate" hreflang="en" href="Nonelocal-development/"/>
     </url>
     <url>
         <loc>Nonezh/quick-start/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/quick-start/"/>
         <xhtml:link rel="alternate" hreflang="en" href="Nonequick-start/"/>
     </url>
     <url>
         <loc>Nonezh/blog/</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-13</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="Nonezh/blog/"/>
         <xhtml:link rel="alternate" hreflang="en" href="Noneblog/"/>
