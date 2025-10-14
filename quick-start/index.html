@@ -336,16 +336,58 @@
         <li class="md-nav__item">
   <a href="#1" class="md-nav__link">
     <span class="md-ellipsis">
-      1. 启动服务
+      1. 环境配置
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="1. 环境配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1. 服务IP修改
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-minio" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2. MINIO密钥配置
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.3. 大模型密钥配置
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-mcp-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.4. MCP-HUB工具集配置
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#2" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 数据初始化
+      2. 重起服务
     </span>
   </a>
   
@@ -439,16 +481,58 @@
         <li class="md-nav__item">
   <a href="#1" class="md-nav__link">
     <span class="md-ellipsis">
-      1. 启动服务
+      1. 环境配置
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="1. 环境配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1. 服务IP修改
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-minio" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2. MINIO密钥配置
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.3. 大模型密钥配置
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-mcp-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.4. MCP-HUB工具集配置
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#2" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 数据初始化
+      2. 重起服务
     </span>
   </a>
   
@@ -498,58 +582,41 @@
   <h1>🚀 快速体验</h1>
 
 <p>确保上一步<a href="../environment/">环境配置</a>已配置好</p>
-<h2 id="1">1. 启动服务</h2>
+<h2 id="1">1. <strong>环境配置</strong></h2>
+<blockquote>
+<p>cd docker 编辑.env文件</p>
+</blockquote>
+<h3 id="11-ip">1.1. <strong>服务IP修改</strong></h3>
 <ul>
-<li>
-<p>根据情况修改根目录下的<strong>docker/docker-compose.yml</strong>里<strong>chat-service</strong>服务的环境变量的值</p>
-<ul>
-<li><strong>以下配置本机启动默认不用修改,在服务器上部署时host.docker.internal需修改为实际IP地址</strong></li>
-<li><strong>1、非必需修改项</strong>:</li>
-<li>可修改<strong>MYSQL_HOST</strong> MySQL数据服务地址</li>
-<li>可修改<strong>SQLALCHEMY_DATABASE_URI</strong> 数据库连接池地址</li>
-<li>可修改<strong>MODEL_API_KEY</strong> 大模型服务API-KEY</li>
-<li>可修改<strong>MINIO_ENDPOINT</strong> MinIO服务地址</li>
-<li>可修改<strong>DIFY_SERVER_URL</strong> Dify服务地址</li>
-<li>可修改<strong>MODEL_NAME</strong> 大模型名称如qwen-plus</li>
-<li>可修改<strong>MODEL_BASE_URL</strong> 公网大模型服务地址默认使用阿里云公网模型服务</li>
-<li>可修改<strong>SHOW_THINKING_PROCESS</strong> 是否显示大模型思考过程</li>
-<li>可修改<strong>NEO4J_URI</strong>  Neo4j数据库连接地址</li>
-<li>可修改<strong>NEO4J_USER</strong> Neo4j数据库用户名</li>
-<li>可修改<strong>NEO4J_PASSWORD</strong> Neo4j数据库密码</li>
-<li><strong>2、必须修改项</strong>:</li>
-<li><strong>必须修改MINIO_ACCESS_KEY</strong> MinIO服务Key</li>
-<li><strong>必须修改MINIO_SECRET_KEY</strong> MinIO服务密钥</li>
-<li><strong>必须修改DIFY_DATABASE_QA_API_KEY</strong> Dify智能体Api-Key</li>
-<li><strong>必须修改MCP_HUB_COMMON_QA_GROUP_URL</strong> 通用问答MCP-HUB工具集组地址</li>
-<li><strong>必须修改MCP_HUB_DATABASE_QA_GROUP_URL</strong> 数据问答MCP-HUB工具集组地址</li>
+<li>本地部署不要修改、服务器部署时配置成实际IP地址</li>
 </ul>
-</li>
-<li>
-<p>根据情况修改<strong>docker/docker-compose.yml里chat-web</strong>前端<strong>nginx.conf</strong>配置文件</p>
-<ul>
-<li>服务器部署,请修改根目录下的<strong>docker/nginx.conf</strong>文件将<strong>host.docker.internal</strong>修改为实际IP地址</li>
-</ul>
-</li>
-</ul>
-<pre><code class="language-angular2html"># 拉起前后端服务和中间件
-cd docker
-docker compose up -d
+<pre><code class="language-angular2html"># 中间件容器内部访问地址 - 服务器部署时配置成实际IP地址
+DOCKER_HOST_INTERNAL=host.docker.internal
+
+# 中间件本地访问地址 - 服务器部署时配置成实际IP地址
+PUBLIC_DOMAIN_HOST=localhost
 </code></pre>
-<h2 id="2">2. 数据初始化</h2>
+<h3 id="12-minio">1.2. <strong>MINIO密钥配置</strong></h3>
 <ul>
-<li>如果使用已安装的mysql,初始化数据时需要修改源码initialize_mysql里面的链接信息</li>
-<li>运行初始化脚本 <strong><em>如果执行脚本报错手动复制init_sql.sql到工具里面手动执行初始化</em></strong></li>
+<li>从上一步MINIO环境配置中获取</li>
 </ul>
-<pre><code class="language-angular2html"># 安装依赖包
-pip install pymysql
-
-# Mac or Linux 用户执行
-cd docker
-./init_data.sh
-
-# Windows 用户执行
-cd common
-python initialize_mysql.py
+<pre><code class="language-angular2html">MINIO_ACCESS_KEY=QfIx8FgdpgKtmbFMbKVb
+MiNIO_SECRET_KEY=DsitWZJT3pecrg020Y2NKCETVpsIc3h2PrKTqONA
+</code></pre>
+<h3 id="13">1.3. <strong>大模型密钥配置</strong></h3>
+<pre><code class="language-angular2html">MODEL_API_KEY=&quot;sk-xxx&quot;
+</code></pre>
+<h3 id="14-mcp-hub">1.4. <strong>MCP-HUB工具集配置</strong></h3>
+<ul>
+<li>从上步MCP-HUB工具集配置中获取<strong>只修改ID值</strong></li>
+<li><strong>http://${DOCKER_HOST_INTERNAL}:3300/mcp/</strong> 前段部分保持不变</li>
+</ul>
+<pre><code class="language-angular2html"># MCP-HUB工具集配置
+MCP_HUB_COMMON_QA_GROUP_URL=&quot;http://${DOCKER_HOST_INTERNAL}:3300/mcp/d7af20c7-1b08-4963-82b6-41affc54a20d&quot;
+MCP_HUB_DATABASE_QA_GROUP_URL=&quot;http://${DOCKER_HOST_INTERNAL}:3300/mcp/71a21b11-d684-462d-9005-79bc62934d88&quot;
+</code></pre>
+<h2 id="2">2. <strong>重起服务</strong></h2>
+<pre><code class="language-angular2html">docker compose down &amp;&amp; docker compose up -d
 </code></pre>
 <h2 id="3">3. <strong>访问服务</strong></h2>
 <ul>
