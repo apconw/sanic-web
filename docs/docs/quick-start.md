@@ -1,7 +1,12 @@
 确保上一步[环境配置](environment.md)已配置好
 
 ## 1. **环境配置**
-> cd docker 编辑.env文件
+```bash
+cd docker 
+cp .env.template .env 
+```
+
+> 编辑.env文件
 
 ### 1.1. **服务IP修改**
 - 本地部署不要修改、服务器部署时配置成实际IP地址
@@ -38,6 +43,6 @@ MCP_HUB_DATABASE_QA_GROUP_URL="http://${DOCKER_HOST_INTERNAL}:3300/mcp/71a21b11-
 ```angular2html
 docker compose down && docker compose up -d
 ```
-   
+
 ## 3. **访问服务**
 - 前端服务：http://localhost:8081

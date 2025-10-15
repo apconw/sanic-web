@@ -25,3 +25,10 @@ logs/
 # 环境变量文件
 .pytest_cache/
 /vector_index/
+
+docker/.env
+*.log
+
+# claude code 配置信息
+CLAUDE.md
+.claude
