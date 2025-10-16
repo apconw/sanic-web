@@ -351,7 +351,7 @@
           <li class="md-nav__item">
   <a href="#2" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 执行部署脚本
+      2. 复制配置文件
     </span>
   </a>
   
@@ -360,11 +360,20 @@
           <li class="md-nav__item">
   <a href="#3" class="md-nav__link">
     <span class="md-ellipsis">
-      3. 中间件配置
+      3. 执行部署脚本
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="3. 中间件配置">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. 中间件配置
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 中间件配置">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -572,7 +581,7 @@
           <li class="md-nav__item">
   <a href="#2" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 执行部署脚本
+      2. 复制配置文件
     </span>
   </a>
   
@@ -581,11 +590,20 @@
           <li class="md-nav__item">
   <a href="#3" class="md-nav__link">
     <span class="md-ellipsis">
-      3. 中间件配置
+      3. 执行部署脚本
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="3. 中间件配置">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. 中间件配置
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 中间件配置">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -715,11 +733,21 @@
 <h3 id="1-clone"><strong>1. Clone仓库</strong></h3>
 <pre><code class="language-angular2html">git clone https://github.com/apconw/sanic-web.git
 </code></pre>
-<h3 id="2"><strong>2. 执行部署脚本</strong></h3>
+<h3 id="2"><strong>2. 复制配置文件</strong></h3>
+<blockquote>
+<p>进入docker目录，复制.env.template文件为.env</p>
+</blockquote>
+<pre><code class="language-bash">cd docker 
+cp .env.template .env 
+</code></pre>
+<h3 id="3"><strong>3. 执行部署脚本</strong></h3>
+<blockquote>
+<p>执行部署脚本报错请查看当前目录下<strong>deploy.log</strong>报错信息</p>
+</blockquote>
 <pre><code class="language-angular2html">cd docker
 ./deploy.sh
 </code></pre>
-<h3 id="3"><strong>3. 中间件配置</strong></h3>
+<h3 id="4"><strong>4. 中间件配置</strong></h3>
 <h4 id="mino">🌲 Mino</h4>
 <blockquote>
 <p>下面chat-service/gpt-vis-api服务都依赖Minio服务</p>
@@ -759,7 +787,7 @@
 <li><strong>VIS_REQUEST_SERVER</strong>环境变量配置默认为<strong>gpt-vis-api</strong>服务地址本</li>
 <li>本地启动不需要修改如果是服务器部署<strong>host.docker.internal</strong>需要修改为实际IP地址</li>
 <li>安装完成后创建一个工具组并复制访问地址先保存一下</li>
-<li>后面配置<strong>MCP_HUB_DATABASE_QA_GROUP_URL</strong>变量时从这里取值</li>
+<li>复制访问<strong>ID</strong>用于后面步骤配置<strong>MCP_HUB_DATABASE_QA_GROUP_URL</strong>变量时从这里取值</li>
 </ul>
 </li>
 </ul>
@@ -777,14 +805,14 @@ VIS_REQUEST_SERVER: http://host.docker.internal:3100/generate
 <img alt="image" src="../../images/antv-group.png" /></p>
 </li>
 <li>
-<p>获取访问链接
+<p>复制访问<strong>ID</strong>
 <img alt="image" src="../../images/antv-group-url.png" /></p>
 </li>
 <li>
 <p><strong>12306火车票查询工具</strong></p>
 <ul>
 <li>安装完成后创建一个工具组并复制访问地址先保存一下</li>
-<li>后面配置<strong>MCP_HUB_COMMON_QA_GROUP_URL</strong>变量时从这里取值</li>
+<li>复制访问<strong>ID</strong>用于后面步骤配置<strong>MCP_HUB_COMMON_QA_GROUP_URL</strong>变量时从这里取值</li>
 </ul>
 </li>
 </ul>
@@ -800,7 +828,7 @@ VIS_REQUEST_SERVER: http://host.docker.internal:3100/generate
 <img alt="image" src="../../images/12306-group.png" /></p>
 </li>
 <li>
-<p>获取访问链接
+<p>复制访问<strong>ID</strong>
 <img alt="image" src="../../images/12306-group-url.png" /></p>
 </li>
 </ul>
