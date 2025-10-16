@@ -57,8 +57,15 @@ dependencies = [
     "jieba>=0.42.1",
     "colorlog>=6.9.0",
     "faiss-cpu>=1.12.0",
+    "langsmith",
 ]
 
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple"
 default = true
+
+
+# ⚠️ 注意：添加新依赖时，请使用：
+# uv add <package> --frozen
+# 以防止意外升级已有依赖版本。
+# uv 不会在配置中自动阻止升级行为。
