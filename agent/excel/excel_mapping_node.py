@@ -41,8 +41,11 @@ def read_excel_columns(state: ExcelAgentState) -> ExcelAgentState:
         catalog_info = {}
         all_db_info = []
 
+        # 获取chat_id，优先从state中获取
+        chat_id = state.get("chat_id")
+
         # 获取DuckDB管理器实例
-        duckdb_manager = get_duckdb_manager()
+        duckdb_manager = get_duckdb_manager(chat_id=chat_id)
 
         logger.info(f"开始处理 {len(file_list)} 个文件")
 

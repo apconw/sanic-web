@@ -45,6 +45,7 @@ class ExcelAgentState(TypedDict):
 
     user_query: str  # 用户问题
     file_list: list  # 文件列表
+    chat_id: Optional[str]  # 聊天ID，用于隔离不同用户的资源
     file_metadata: Dict[str, FileInfo]  # 文件元数据信息 {file_path: FileInfo}
     sheet_metadata: Dict[str, SheetInfo]  # Sheet元数据信息 {table_name: SheetInfo}
     db_info: list[dict]  # 把表格映射成数据库表结构（扩展支持多catalog）

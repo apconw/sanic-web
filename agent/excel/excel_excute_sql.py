@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def exe_sql_excel_query(state):
     """
-    执行SQL查询 - 使用统一的DuckDB连接管理器
+    执行SQL查询
     :param state: ExcelAgentState
     :return: 更新后的ExcelAgentState
     """
@@ -21,8 +21,11 @@ def exe_sql_excel_query(state):
         if state["generated_sql"] == "No SQL query generated":
             raise ValueError("SQL生成失败，无法执行查询")
 
+        # 获取chat_id，优先从state中获取，如果没有则使用默认管理器
+        chat_id = state.get("chat_id")
+
         # 获取DuckDB管理器实例
-        duckdb_manager = get_duckdb_manager()
+        duckdb_manager = get_duckdb_manager(chat_id=chat_id)
 
         # 检查是否有已注册的数据
         registered_catalogs = duckdb_manager.get_registered_catalogs()

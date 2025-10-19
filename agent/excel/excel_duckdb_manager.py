@@ -5,6 +5,7 @@ DuckDB 连接管理器
 
 import logging
 import re
+import time
 import traceback
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
@@ -104,6 +105,9 @@ class ExcelDuckDBManager:
         """
         conn = self._get_connection()
         registered_tables = {}
+
+        # 创建schema（如果不存在）
+        conn.execute(f"CREATE SCHEMA IF NOT EXISTS {catalog_name}")
 
         for sheet_name, df in dataframes:
             try:
@@ -368,27 +372,157 @@ class ExcelDuckDBManager:
             return "VARCHAR(255)"
 
 
-# 全局实例管理器
-_duckdb_manager: Optional[ExcelDuckDBManager] = None
+class ChatDuckDBManager:
+    """
+    聊天级别的DuckDB管理器
+    为每个chat_id维护独立的ExcelDuckDBManager实例
+    """
+
+    def __init__(self):
+        # {chat_id: ExcelDuckDBManager}
+        self._chat_managers: Dict[str, ExcelDuckDBManager] = {}
+        # 会话清理时间配置（秒）
+        self._session_timeout = 36000  # 10小时
+        # {chat_id: 最后访问时间}
+        self._last_access: Dict[str, float] = {}
+        logger.info("初始化聊天级别DuckDB管理器")
+
+    def get_manager(self, chat_id: str) -> ExcelDuckDBManager:
+        """
+        获取指定chat_id的DuckDB管理器实例
+
+        :param chat_id: 聊天ID
+        :return: ExcelDuckDBManager实例
+        """
+        # 检查是否已存在该chat_id的管理器
+        if chat_id not in self._chat_managers:
+            self._chat_managers[chat_id] = ExcelDuckDBManager()
+            logger.info(f"为chat_id '{chat_id}' 创建新的DuckDB管理器实例")
+
+        # 更新最后访问时间
+        self._last_access[chat_id] = time.time()
+
+        return self._chat_managers[chat_id]
+
+    def close_manager(self, chat_id: str) -> bool:
+        """
+        关闭指定chat_id的DuckDB管理器
+
+        :param chat_id: 聊天ID
+        :return: 是否成功关闭
+        """
+        if chat_id in self._chat_managers:
+            try:
+                self._chat_managers[chat_id].close()
+                del self._chat_managers[chat_id]
+                if chat_id in self._last_access:
+                    del self._last_access[chat_id]
+                logger.info(f"已关闭chat_id '{chat_id}' 的DuckDB管理器实例")
+                return True
+            except Exception as e:
+                logger.error(f"关闭chat_id '{chat_id}' 的DuckDB管理器失败: {str(e)}")
+                return False
+        return False
+
+    def cleanup_expired_sessions(self):
+        """
+        清理过期的会话
+        """
+        current_time = time.time()
+        expired_chats = []
+
+        for chat_id, last_access in self._last_access.items():
+            if current_time - last_access > self._session_timeout:
+                expired_chats.append(chat_id)
+
+        for chat_id in expired_chats:
+            logger.info(f"清理过期会话: {chat_id}")
+            self.close_manager(chat_id)
+
+    def get_active_chat_count(self) -> int:
+        """
+        获取活跃的聊天数量
+
+        :return: 活跃聊天数量
+        """
+        return len(self._chat_managers)
+
+    def get_chat_list(self) -> List[str]:
+        """
+        获取所有活跃的chat_id列表
+
+        :return: chat_id列表
+        """
+        return list(self._chat_managers.keys())
+
+    def close_all(self):
+        """
+        关闭所有聊天会话的DuckDB管理器
+        """
+        for chat_id in list(self._chat_managers.keys()):
+            self.close_manager(chat_id)
+        logger.info("已关闭所有聊天会话的DuckDB管理器实例")
 
 
-def get_duckdb_manager() -> ExcelDuckDBManager:
-    """
-    获取全局 DuckDB 管理器实例（单例模式）
-    """
-    global _duckdb_manager
-    if _duckdb_manager is None:
-        _duckdb_manager = ExcelDuckDBManager()
-        logger.info("创建全局 DuckDB 管理器实例")
-    return _duckdb_manager
+# 全局聊天级别管理器实例
+_chat_duckdb_manager: Optional[ChatDuckDBManager] = None
 
 
-def close_duckdb_manager():
+def get_chat_duckdb_manager() -> ChatDuckDBManager:
     """
-    关闭全局 DuckDB 管理器
+    获取全局聊天级别DuckDB管理器实例（单例模式）
+
+    :return: ChatDuckDBManager实例
     """
-    global _duckdb_manager
-    if _duckdb_manager is not None:
-        _duckdb_manager.close()
-        _duckdb_manager = None
-        logger.info("全局 DuckDB 管理器已关闭")
+    global _chat_duckdb_manager
+    if _chat_duckdb_manager is None:
+        _chat_duckdb_manager = ChatDuckDBManager()
+        logger.info("创建全局聊天级别DuckDB管理器实例")
+    return _chat_duckdb_manager
+
+
+def get_duckdb_manager(chat_id: str = None) -> ExcelDuckDBManager:
+    """
+    获取DuckDB管理器实例
+
+    :param chat_id: 聊天ID，如果提供则获取chat_id级别的管理器，否则使用全局默认管理器
+    :return: ExcelDuckDBManager实例
+    """
+    if chat_id:
+        # 使用chat_id级别的管理器
+        chat_manager = get_chat_duckdb_manager()
+        return chat_manager.get_manager(chat_id)
+    else:
+        # 向后兼容：如果没有提供chat_id，使用默认的全局管理器
+        return get_default_duckdb_manager()
+
+
+def get_default_duckdb_manager() -> ExcelDuckDBManager:
+    """
+    获取默认的全局DuckDB管理器实例（向后兼容）
+
+    :return: ExcelDuckDBManager实例
+    """
+    # 创建一个默认的管理器实例
+    if not hasattr(get_default_duckdb_manager, '_default_manager'):
+        get_default_duckdb_manager._default_manager = ExcelDuckDBManager()
+        logger.info("创建默认全局DuckDB管理器实例")
+    return get_default_duckdb_manager._default_manager
+
+
+def close_duckdb_manager(chat_id: str = None):
+    """
+    关闭DuckDB管理器
+
+    :param chat_id: 聊天ID，如果提供则关闭指定chat_id的管理器，否则关闭默认管理器
+    """
+    if chat_id:
+        # 关闭指定chat_id的管理器
+        chat_manager = get_chat_duckdb_manager()
+        chat_manager.close_manager(chat_id)
+    else:
+        # 向后兼容：关闭默认管理器
+        if hasattr(get_default_duckdb_manager, '_default_manager'):
+            get_default_duckdb_manager._default_manager.close()
+            get_default_duckdb_manager._default_manager = None
+            logger.info("默认全局DuckDB管理器已关闭")

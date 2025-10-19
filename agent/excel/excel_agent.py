@@ -11,6 +11,7 @@ from agent.excel.excel_agent_state import ExcelAgentState
 from agent.excel.excel_graph import create_excel_graph
 from constants.code_enum import DataTypeEnum
 from services.user_service import decode_jwt_token, add_user_record, query_user_qa_record
+from agent.excel.excel_duckdb_manager import close_duckdb_manager, get_chat_duckdb_manager
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +60,11 @@ class ExcelAgent:
             initial_state = ExcelAgentState(
                 user_query=query,
                 file_list=file_list,
-                file_metadata={},  # 新增：文件元数据
-                sheet_metadata={},  # 新增：Sheet元数据
-                db_info=[],  # 修改：支持多个表结构
-                catalog_info={},  # 新增：Catalog信息
+                chat_id=chat_id,  # chat_id
+                file_metadata={},  # 文件元数据
+                sheet_metadata={},  # Sheet元数据
+                db_info=[],  # 支持多个表结构
+                catalog_info={},  # Catalog信息
                 generated_sql="",
                 chart_url="",
                 chart_type="",
@@ -269,6 +271,33 @@ class ExcelAgent:
             self.running_tasks[task_id]["cancelled"] = True
             return True
         return False
+
+    def cleanup_chat_session(self, chat_id: str) -> bool:
+        """
+        清理指定chat_id的DuckDB会话
+        :param chat_id: 聊天ID
+        :return: 是否成功清理
+        """
+        try:
+            return close_duckdb_manager(chat_id=chat_id)
+        except Exception as e:
+            logger.error(f"清理chat_id '{chat_id}' 的DuckDB会话失败: {str(e)}")
+            return False
+
+    def get_chat_session_stats(self) -> dict:
+        """
+        获取聊天会话统计信息
+        :return: 会话统计信息
+        """
+        try:
+            chat_manager = get_chat_duckdb_manager()
+            return {
+                "active_chat_count": chat_manager.get_active_chat_count(),
+                "chat_list": chat_manager.get_chat_list()
+            }
+        except Exception as e:
+            logger.error(f"获取聊天会话统计失败: {str(e)}")
+            return {"active_chat_count": 0, "chat_list": []}
 
     @staticmethod
     def _format_multi_file_table_info(state: Dict[str, Any]) -> str:
