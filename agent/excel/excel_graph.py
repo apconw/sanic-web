@@ -36,9 +36,10 @@ def create_excel_graph():
     graph.add_node("excel_parsing", read_excel_columns)
     graph.add_node("sql_generator", sql_generate_excel)
     graph.add_node("sql_executor", exe_sql_excel_query)
+    graph.add_node("summarize", summarize)
     graph.add_node("data_render", data_render_ant)
     graph.add_node("data_render_apache", data_render_apache)
-    graph.add_node("summarize", summarize)
+
 
     graph.set_entry_point("excel_parsing")
     graph.add_edge("excel_parsing", "sql_generator")
@@ -52,4 +53,7 @@ def create_excel_graph():
     graph.add_edge("data_render", END)
     graph.add_edge("data_render_apache", END)
     graph_compiled: CompiledStateGraph = graph.compile()
+
+    logger.info(f"excel_graph mermaid_code: {graph_compiled.get_graph().draw_mermaid()}")
+
     return graph_compiled

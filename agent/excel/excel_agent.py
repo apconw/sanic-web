@@ -51,6 +51,7 @@ class ExcelAgent:
 
         # 实现上传一次多次对话的效果 默认单轮对话取最新上传的文件
         if file_list is None:
+            # todo 使用graph的 state进行管理。
             user_qa_record = query_user_qa_record(chat_id)[0]
             if user_qa_record:
                 file_list = json.loads(user_qa_record["file_key"])
@@ -58,14 +59,18 @@ class ExcelAgent:
             initial_state = ExcelAgentState(
                 user_query=query,
                 file_list=file_list,
-                db_info="",
+                file_metadata={},  # 新增：文件元数据
+                sheet_metadata={},  # 新增：Sheet元数据
+                db_info=[],  # 修改：支持多个表结构
+                catalog_info={},  # 新增：Catalog信息
                 generated_sql="",
                 chart_url="",
                 chart_type="",
                 apache_chart_data={},
-                execution_result=[],
+                execution_result=None,  # 修改：使用ExecutionResult对象
                 report_summary="",
             )
+            # todo 每次请求都创建一个 graph ，不是太合理
             graph: CompiledStateGraph = create_excel_graph()
 
             # 获取用户信息 标识对话状态
@@ -181,9 +186,9 @@ class ExcelAgent:
         处理各个步骤的内容
         """
         content_map = {
-            "excel_parsing": lambda: self._format_table_columns_info(step_value),
-            "sql_generator": lambda: step_value["generated_sql"],
-            "sql_executor": lambda: "执行sql语句成功" if step_value["execution_result"].success else "执行sql语句失败",
+            "excel_parsing": lambda: self._format_multi_file_table_info(step_value),
+            "sql_generator": lambda: step_value.get("generated_sql", ""),
+            "sql_executor": lambda: self._format_execution_result(step_value.get("execution_result")),
             "summarize": lambda: step_value.get("report_summary", ""),
             "data_render": lambda: step_value.get("chart_url", ""),
             "data_render_apache": lambda: step_value.get("apache_chart_data", {}),
@@ -264,6 +269,76 @@ class ExcelAgent:
             self.running_tasks[task_id]["cancelled"] = True
             return True
         return False
+
+    @staticmethod
+    def _format_multi_file_table_info(state: Dict[str, Any]) -> str:
+        """
+        格式化多文件多Sheet信息为HTML格式
+        :param state: 状态字典
+        :return: 格式化后的HTML字符串
+        """
+        file_metadata = state.get("file_metadata", {})
+        sheet_metadata = state.get("sheet_metadata", {})
+        db_info = state.get("db_info", [])
+
+        if not file_metadata and not db_info:
+            return "未找到文件信息"
+
+        html_content = """
+        <div style="background-color: #f0f8ff; padding: 10px; border-radius: 5px; margin: 10px 0;">
+            <h4>📁 文件解析结果</h4>
+        """
+
+        # 显示文件信息
+        if file_metadata:
+            html_content += "<h5>📋 文件列表：</h5><ul>"
+            for file_key, file_info in file_metadata.items():
+                html_content += f"""
+                <li>
+                    <strong>{file_info.file_name}</strong><br>
+                    <small>Catalog: {file_info.catalog_name} |
+                    Sheets: {file_info.sheet_count} |
+                    大小: {file_info.total_size} 字节</small>
+                </li>
+                """
+            html_content += "</ul>"
+
+        # 显示表信息
+        if db_info:
+            html_content += "<h5>📊 数据表：</h5><ul>"
+            for table in db_info:
+                table_name = table.get("table_name", "未知表")
+                table_comment = table.get("table_comment", "")
+                columns = table.get("columns", {})
+
+                html_content += f"""
+                <li>
+                    <strong>{table_name}</strong><br>
+                    <em>{table_comment}</em><br>
+                    <small>列数: {len(columns)}</small>
+                </li>
+                """
+            html_content += "</ul>"
+
+        html_content += "</div>"
+        return html_content
+
+    @staticmethod
+    def _format_execution_result(execution_result) -> str:
+        """
+        格式化SQL执行结果
+        :param execution_result: ExecutionResult对象
+        :return: 格式化后的字符串
+        """
+        if not execution_result:
+            return "未找到执行结果"
+
+        if execution_result.success:
+            row_count = len(execution_result.data) if execution_result.data else 0
+            column_count = len(execution_result.columns) if execution_result.columns else 0
+            return f"✅ 查询执行成功！返回 {row_count} 行数据，{column_count} 列"
+        else:
+            return f"❌ 查询执行失败：{execution_result.error or '未知错误'}"
 
     @staticmethod
     def _format_table_columns_info(db_info: Dict[str, Any]) -> str:

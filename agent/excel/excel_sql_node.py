@@ -21,7 +21,13 @@ def sql_generate_excel(state):
           - 根据用户问题生成一条优化的SQL语句。
           - 根据查询生成逻辑从**图表定义**中选择最合适的图表类型。
 
-        ## 约束条件
+        ## 重要约束（多文件多Sheet环境）
+         1. **跨文件查询支持**：现在支持多个文件，每个文件注册为独立的DuckDB catalog，每个Sheet注册为独立的表
+         2. **表名格式**：表名采用 `catalog.table` 格式，其中catalog对应文件名，table对应Sheet名
+         3. **跨文件JOIN**：支持在不同catalog之间进行JOIN操作，例如：`catalog1.table1 JOIN catalog2.table2 ON ...`
+         4. **智能关联**：基于列名和数据类型自动识别可能的关联关系
+
+        ## 通用约束条件
          1. 你必须仅生成一条合法、可执行的SQL查询语句 —— 不得包含解释、Markdown、注释或额外文本。
          2. **必须直接且完整地使用所提供的表结构和表关系来生成SQL语句**。
          3. 你必须严格遵守数据类型、外键关系及表结构中定义的约束。
@@ -34,6 +40,9 @@ def sql_generate_excel(state):
 
        ## 提供的信息
         - 表结构：{db_schema}
+        - 文件元数据：{file_metadata}
+        - Sheet元数据：{sheet_metadata}
+        - Catalog信息：{catalog_info}
         - 用户提问：{user_query}
         - 当前时间：{current_time}
 
@@ -78,22 +87,37 @@ def sql_generate_excel(state):
     chain = prompt | llm
 
     try:
-        response = chain.invoke(
-            {
-                "db_schema": state["db_info"],
-                "user_query": state["user_query"],
-                "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            }
-        )
+        # 构建详细的上下文信息
+        context = {
+            "db_schema": state["db_info"],
+            "file_metadata": state.get("file_metadata", {}),
+            "sheet_metadata": state.get("sheet_metadata", {}),
+            "catalog_info": state.get("catalog_info", {}),
+            "user_query": state["user_query"],
+            "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+        # 添加调试信息
+        logger.info(f"可用的catalog: {list(state.get('catalog_info', {}).keys())}")
+        logger.info(f"可用的表: {[table['table_name'] for table in state['db_info']]}")
+
+        response = chain.invoke(context)
 
         clean_json_str = response.content.strip().removeprefix("```json").strip().removesuffix("```").strip()
-        state["generated_sql"] = json.loads(clean_json_str)["sql_query"]
+        result = json.loads(clean_json_str)
+
+        generated_sql = result["sql_query"]
+
+        state["generated_sql"] = generated_sql
         # mcp-hub 服务默认添加前缀防止重复问题
-        state["chart_type"] = "mcp-server-chart-" + json.loads(clean_json_str)["chart_type"]
+        state["chart_type"] = "mcp-server-chart-" + result["chart_type"]
+
+        logger.info(f"生成的SQL: {generated_sql}")
+        logger.info(f"推荐的图表: {state['chart_type']}")
 
     except Exception as e:
         traceback.print_exception(e)
-        logger.error(f"Error in generating: {e}")
+        logger.error(f"Error in generating SQL: {e}")
         state["generated_sql"] = "No SQL query generated"
 
     return state

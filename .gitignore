@@ -32,3 +32,4 @@ docker/.env
 # claude code 配置信息
 CLAUDE.md
 .claude/
+.spec-workflow/
