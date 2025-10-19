@@ -70,7 +70,9 @@ class MinioUtils:
 
             file_stream = io.BytesIO(file_data.body)
             file_length = len(file_data.body)
-            object_name = file_data.name
+            chat_id = request.body.get("chat_id")
+
+            object_name = f"{chat_id}__{file_data.name}"
 
             self.ensure_bucket(bucket_name)
             self.client.put_object(bucket_name, object_name, file_stream, file_length, content_type=file_data.type)
@@ -141,7 +143,8 @@ class MinioUtils:
                 raise MyException(SysCode.c_9999, "未找到文件数据")
 
             content = io.BytesIO(file_data.body)
-            object_name = file_data.name
+            chat_id = request.body.get("chat_id")
+            object_name = f"{chat_id}__{file_data.name}"
             mime_type = file_data.type
             file_suffix = ".txt"
             # 可选：添加文件大小限制（例如 50MB）

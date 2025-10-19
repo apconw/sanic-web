@@ -298,7 +298,7 @@ class ExcelAgent:
                     <strong>{file_info.file_name}</strong><br>
                     <small>Catalog: {file_info.catalog_name} |
                     Sheets: {file_info.sheet_count} |
-                    大小: {file_info.total_size} 字节</small>
+                    上传时间: {file_info.upload_time}</small>
                 </li>
                 """
             html_content += "</ul>"
