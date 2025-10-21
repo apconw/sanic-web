@@ -257,10 +257,10 @@ const checkAllFilesUploaded = () => {
 
   // 新增：表格问答只支持单个excel文件
   if (qa_type.value === 'FILEDATA_QA') {
-    if (pendingFiles.length > 1) {
-      window.$ModalMessage.warning('表格问答只支持上传单个文件')
-      return false
-    }
+    // if (pendingFiles.length > 1) {
+    //   window.$ModalMessage.warning('表格问答只支持上传单个文件')
+    //   return false
+    // }
 
     if (pendingFiles.length === 1) {
       const file = pendingFiles[0]

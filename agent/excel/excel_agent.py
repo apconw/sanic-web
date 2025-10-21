@@ -314,42 +314,31 @@ class ExcelAgent:
             return "未找到文件信息"
 
         html_content = """
-        <div style="background-color: #f0f8ff; padding: 10px; border-radius: 5px; margin: 10px 0;">
-            <h4>📁 文件解析结果</h4>
+        文件解析结果<br>
         """
 
         # 显示文件信息
         if file_metadata:
-            html_content += "<h5>📋 文件列表：</h5><ul>"
+            html_content += "文件列表：<br><ol>"
             for file_key, file_info in file_metadata.items():
-                html_content += f"""
-                <li>
-                    <strong>{file_info.file_name}</strong><br>
-                    <small>Catalog: {file_info.catalog_name} |
-                    Sheets: {file_info.sheet_count} |
-                    上传时间: {file_info.upload_time}</small>
-                </li>
-                """
-            html_content += "</ul>"
+                html_content += f"<li>file_name: {file_info.file_name}  |"
+                f"Catalog: {file_info.catalog_name} |"
+                f"Sheets: {file_info.sheet_count} |"
+                f"上传时间: {file_info.upload_time} </li>"
+            html_content += "</ol><br>"
 
         # 显示表信息
         if db_info:
-            html_content += "<h5>📊 数据表：</h5><ul>"
+            html_content += "数据表：<br><ol>"
             for table in db_info:
                 table_name = table.get("table_name", "未知表")
                 table_comment = table.get("table_comment", "")
                 columns = table.get("columns", {})
+                html_content += f"<li>table_name:{table_name} | table_comment:{table_comment} | 列数: {len(columns)} </li>"
 
-                html_content += f"""
-                <li>
-                    <strong>{table_name}</strong><br>
-                    <em>{table_comment}</em><br>
-                    <small>列数: {len(columns)}</small>
-                </li>
-                """
-            html_content += "</ul>"
+            html_content += "</ol><br>"
 
-        html_content += "</div>"
+        html_content += "<br>"
         return html_content
 
     @staticmethod

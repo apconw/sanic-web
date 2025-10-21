@@ -53,7 +53,8 @@ class MinioUtils:
             logger.error(f"Error checking or creating bucket {bucket_name}: {err}")
             raise MyException(SysCode.c_9999)
 
-    def upload_file_from_request(self, request: Request, bucket_name: str = "filedata") -> dict:
+    def upload_file_from_request(self, request: Request, bucket_name: str = "filedata",
+                                 object_name: str = None) -> dict:
         """
         从请求中读取文件数据并上传到MinIO服务器，返回预签名URL。
 
@@ -70,9 +71,9 @@ class MinioUtils:
 
             file_stream = io.BytesIO(file_data.body)
             file_length = len(file_data.body)
-            chat_id = request.body.get("chat_id")
-
-            object_name = f"{chat_id}__{file_data.name}"
+            if object_name is None:
+                # uuid可以避免不同用户上传同名文件 导致minio的文件被覆盖
+                object_name = f"{uuid4()}__{file_data.name}"
 
             self.ensure_bucket(bucket_name)
             self.client.put_object(bucket_name, object_name, file_stream, file_length, content_type=file_data.type)
@@ -143,15 +144,15 @@ class MinioUtils:
                 raise MyException(SysCode.c_9999, "未找到文件数据")
 
             content = io.BytesIO(file_data.body)
-            chat_id = request.body.get("chat_id")
-            object_name = f"{chat_id}__{file_data.name}"
+            # uuid可以避免不同用户上传同名文件 导致minio的文件被覆盖
+            object_name = f"{uuid4()}__{file_data.name}"
             mime_type = file_data.type
             file_suffix = ".txt"
             # 可选：添加文件大小限制（例如 50MB）
             if len(file_data.body) > 50 * 1024 * 1024:
                 raise MyException(SysCode.c_9999, "文件大小超出限制")
 
-            source_file_key = self.upload_file_from_request(request, bucket_name)
+            source_file_key = self.upload_file_from_request(request, bucket_name, object_name)
 
             # 校验 MIME 类型是否支持（增强安全性）
             allowed_mimes = {
