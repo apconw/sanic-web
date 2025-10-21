@@ -58,6 +58,7 @@ dependencies = [
     "colorlog>=6.9.0",
     "faiss-cpu>=1.12.0",
     "langsmith",
+    "tavily-python",
 ]
 
 [[tool.uv.index]]
