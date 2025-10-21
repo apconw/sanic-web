@@ -36,7 +36,11 @@ cp .env.template .env
 > 执行部署脚本报错请查看当前目录下**deploy.log**报错信息
 ```angular2html
 cd docker
+# mac或linux环境
 ./deploy.sh
+
+# Windows环境
+./deploy.bat
 ```
 
 ### **4. 中间件配置**
