@@ -98,14 +98,14 @@ def read_excel_columns(state: ExcelAgentState) -> ExcelAgentState:
 
                 # 生成表结构信息
                 for table_name, sheet_info in registered_tables.items():
-                    full_table_name = f"{catalog_name}.{table_name}"
 
                     table_schema = {
-                        "table_name": full_table_name,
+                        "table_name": table_name,
+                        "catalog_name": catalog_name,
                         "columns": sheet_info.columns_info,
                         "foreign_keys": [],
                         "table_comment": f"{file_name} - {sheet_info.sheet_name}",
-                        "catalog_name": catalog_name
+                        "sample_data": sheet_info.sample_data
                     }
                     all_db_info.append(table_schema)
 
