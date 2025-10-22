@@ -3,6 +3,7 @@ import logging
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import create_react_agent
 
 from agent.text2sql.state.agent_state import AgentState
@@ -11,7 +12,7 @@ from agent.text2sql.state.agent_state import AgentState
 AntV mcp 数据渲染节点
 """
 
-
+memory = InMemorySaver()
 async def data_render_ant(state: AgentState):
     """
     蚂蚁antV数据图表渲染
@@ -67,22 +68,19 @@ async def data_render_ant(state: AgentState):
         4. **生成图表**：调用MCP工具并等待真实响应
         5. **返回结果**：只返回真实的图表链接
 
-        ### 输入数据
-        {result_data}
-
         ### 严格要求
         - 必须实际调用MCP工具，不能模拟或假设
         - 必须返回真实的图表链接，不能返回示例链接
         - x轴和y轴标签使用中文
         - 如果无法生成图表，请说明具体原因
-
-        ### 返回格式
-        ![图表](真实的图表链接)
-        """,
+        - 工具调用成功后，返回真实的图表链接，格式如下： "![图表名称](真实的图表链接)"
+        
+        请注意，你必须严格遵守这些要求，否则你的回答将被视为无效。
+        """
     )
 
     result = await chart_agent.ainvoke(
-        {"messages": [("user", "根据输入数据选择合适的MCP图表工具进行渲染")]},
+        {"messages": [("user", f"输入数据如下:\n<data>{result_data}</data>")]},
         config={"configurable": {"thread_id": "chart-render"}},
     )
 
