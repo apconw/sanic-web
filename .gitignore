@@ -34,3 +34,5 @@ docker/.env
 CLAUDE.md
 .claude/
 .spec-workflow/
+test/
+examples/
