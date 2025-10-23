@@ -4,6 +4,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.graph.state import CompiledStateGraph
 
 from agent.excel.excel_agent_state import ExcelAgentState
+from agent.excel.excel_data_render_apache import excel_data_render_apache
 from agent.excel.excel_excute_sql import exe_sql_excel_query
 from agent.excel.excel_mapping_node import read_excel_columns
 from agent.excel.excel_sql_node import sql_generate_excel
@@ -38,8 +39,7 @@ def create_excel_graph():
     graph.add_node("sql_executor", exe_sql_excel_query)
     graph.add_node("summarize", summarize)
     graph.add_node("data_render", data_render_ant)
-    graph.add_node("data_render_apache", data_render_apache)
-
+    graph.add_node("data_render_apache", excel_data_render_apache)
 
     graph.set_entry_point("excel_parsing")
     graph.add_edge("excel_parsing", "sql_generator")

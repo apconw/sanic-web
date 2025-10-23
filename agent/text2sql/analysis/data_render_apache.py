@@ -50,7 +50,6 @@ def data_render_apache(state: AgentState) -> dict:
     # 获取原始列名（英文字段名），用于映射数据
     try:
         columns = table_schema_info.get(target_table, {}).get("columns", {})
-        # 兼容表格问答 todo
         if not columns:
             columns = table_schema_info["columns"]
         english_columns = list(columns.keys())  # 保持与 comment 相同的顺序
@@ -118,7 +117,6 @@ def get_column_comments(schema_inspector: dict, table_name: str) -> list:
     try:
 
         table_info = schema_inspector.get(table_name, {})
-        # 兼容表格问答todo
         if not table_info:
             table_info = schema_inspector
 

@@ -75,12 +75,12 @@ def read_excel_columns(state: ExcelAgentState) -> ExcelAgentState:
                     file_name=file_name,
                     file_path=file_url,
                     catalog_name="",  # 将在注册后填充
-                    sheet_count=0,   # 将在注册后填充
-                    upload_time=datetime.now().isoformat()
+                    sheet_count=0,  # 将在注册后填充
+                    upload_time=datetime.now().isoformat(),
                 )
 
                 registered_tables = {}
-                catalog_name= ""
+                catalog_name = ""
                 if extension in ["xlsx", "xls"]:
                     # 注册到 DuckDB 管理器
                     catalog_name, registered_tables = duckdb_manager.register_excel_file(file_url, file_name)
@@ -105,7 +105,7 @@ def read_excel_columns(state: ExcelAgentState) -> ExcelAgentState:
                         "columns": sheet_info.columns_info,
                         "foreign_keys": [],
                         "table_comment": f"{file_name} - {sheet_info.sheet_name}",
-                        "sample_data": sheet_info.sample_data
+                        "sample_data": sheet_info.sample_data,
                     }
                     all_db_info.append(table_schema)
 
@@ -126,11 +126,20 @@ def read_excel_columns(state: ExcelAgentState) -> ExcelAgentState:
         state["db_info"] = all_db_info
 
         logger.info(f"处理完成: {len(file_metadata)} 个文件, {len(sheet_metadata)} 个表")
-        logger.info(f"生成的表结构: {json.dumps(all_db_info, ensure_ascii=False, indent=2)}")
-
+        logger.info(f"生成的表结构: {json.dumps(all_db_info, default=json_serializer, ensure_ascii=False, indent=2)}")
     except Exception as e:
         traceback.print_exception(e)
         logger.error(f"读取Excel表列信息出错: {str(e)}", exc_info=True)
         raise ValueError(f"读取文件列信息时发生错误: {str(e)}") from e
 
     return state
+
+
+def json_serializer(obj):
+    """处理不可直接JSON序列化的对象"""
+    if isinstance(obj, pd.Timestamp):
+        return obj.isoformat()
+    elif hasattr(obj, "isoformat"):
+        # 处理其他可能的时间类型对象
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
