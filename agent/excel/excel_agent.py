@@ -26,6 +26,7 @@ class ExcelAgent:
         self.running_tasks = {}
         # 获取环境变量控制是否显示思考过程，默认为开启
         self.show_thinking_process = os.getenv("SHOW_THINKING_PROCESS", "true").lower() == "true"
+        self.excel_graph = create_excel_graph()
 
     async def run_excel_agent(
         self,
@@ -72,8 +73,7 @@ class ExcelAgent:
                 execution_result=None,  # 修改：使用ExecutionResult对象
                 report_summary="",
             )
-            # todo 每次请求都创建一个 graph ，不是太合理
-            graph: CompiledStateGraph = create_excel_graph()
+            graph: CompiledStateGraph = self.excel_graph
 
             # 获取用户信息 标识对话状态
             user_dict = await decode_jwt_token(user_token)
@@ -293,7 +293,7 @@ class ExcelAgent:
             chat_manager = get_chat_duckdb_manager()
             return {
                 "active_chat_count": chat_manager.get_active_chat_count(),
-                "chat_list": chat_manager.get_chat_list()
+                "chat_list": chat_manager.get_chat_list(),
             }
         except Exception as e:
             logger.error(f"获取聊天会话统计失败: {str(e)}")
@@ -334,7 +334,9 @@ class ExcelAgent:
                 table_name = table.get("table_name", "未知表")
                 table_comment = table.get("table_comment", "")
                 columns = table.get("columns", {})
-                html_content += f"<li>table_name:{table_name} | table_comment:{table_comment} | 列数: {len(columns)} </li>"
+                html_content += (
+                    f"<li>table_name:{table_name} | table_comment:{table_comment} | 列数: {len(columns)} </li>"
+                )
 
             html_content += "</ol><br>"
 
