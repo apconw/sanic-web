@@ -2,12 +2,12 @@
 PROJECT_NAME = chat-vue3-mvp
 
 # Docker 镜像标签
-DOCKER_IMAGE = apconw/$(PROJECT_NAME):1.1.9
+DOCKER_IMAGE = apconw/$(PROJECT_NAME):1.2.0
 
 # 阿里云镜像仓库地址 (需要根据实际情况修改)
 ALIYUN_REGISTRY = crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com
 ALIYUN_NAMESPACE = apconw
-ALIYUN_IMAGE_NAME = $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/$(PROJECT_NAME):1.1.9
+ALIYUN_IMAGE_NAME = $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/$(PROJECT_NAME):1.2.0
 
 
 # Docker 容器名称

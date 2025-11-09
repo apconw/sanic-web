@@ -152,7 +152,7 @@ class DeepAgent:
                 config=config,
                 stream_mode="messages",
             ):
-                print(message_chunk)
+                # print(message_chunk)
 
                 # 检查是否已取消
                 if self.running_tasks[task_id]["cancelled"]:
