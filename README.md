@@ -7,7 +7,7 @@
 
 **已集成MCP多智能体架构**
 
-基于 **Dify 、LangChain/LangGraph、llamaIndex、Neo4j、MCP、Ollama&Vllm、Sanic 和 Text2SQL** 📊 等技术构建的一站式大模型应用开发项目，采用 
+基于 **Dify 、LangChain1.0.x/LangGraph1.0.x、llamaIndex、Neo4j、MCP、Ollama&Vllm、Sanic 和 Text2SQL** 📊 等技术构建的一站式大模型应用开发项目，采用 
 **Vue3、TypeScript** 和 
 **Vite 5** 
 打造现代UI。它支持通过 **ECharts** 📈 / **AntV((mcp-server-chart)**
