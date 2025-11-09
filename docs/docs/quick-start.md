@@ -20,8 +20,21 @@ MiNIO_SECRET_KEY=DsitWZJT3pecrg020Y2NKCETVpsIc3h2PrKTqONA
 ```
 
 ### 1.3. **大模型密钥配置**
+- 大模型密钥配置
+  - **本地ollama模式 MODEL_TYPE需配置成ollama**
 ```angular2html
+MODEL_TYPE="openai"
+MODEL_NAME="qwen3-max"
 MODEL_API_KEY="sk-xxx"
+MODEL_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+MODEL_TEMPERATURE=0.75
+```
+- 小模型配置
+```angular2html
+SMALL_MODEL_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+SMALL_MODEL_API_KEY="sk-xxx"
+RERANK_MODEL_NAME="gte-rerank-v2"
+EMBEDDING_MODEL_NAME="text-embedding-v4"
 ```
 
 ### 1.4. **MCP-HUB工具集配置**
@@ -31,6 +44,13 @@ MODEL_API_KEY="sk-xxx"
 # MCP-HUB工具集配置
 MCP_HUB_COMMON_QA_GROUP_URL="http://${DOCKER_HOST_INTERNAL}:3300/mcp/d7af20c7-1b08-4963-82b6-41affc54a20d"
 MCP_HUB_DATABASE_QA_GROUP_URL="http://${DOCKER_HOST_INTERNAL}:3300/mcp/71a21b11-d684-462d-9005-79bc62934d88"
+```
+
+### 1.5. **Tavily 配置**
+- 用于深度搜索智能体
+- 获取Tavily密钥配置(https://www.tavily.com/)
+```angular2html
+TAVILY_API_KEY="sk-xxx"
 ```
 
 
