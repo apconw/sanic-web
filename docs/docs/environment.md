@@ -18,7 +18,8 @@
 
 ### 📚 **大模型选择**
 - 推荐购买公网大模型[阿里云公网大模型服务APIKEY](http://aliyun.com/product/bailian)
-- 模型要求: **目前只支持Qwen系列模型**
+- 模型要求: **默认使用openai/sdk基本支持所有模型**
+- 模型支持: **本地模式**(ollama, vllm...) **公网模式**(deepseek, qwen3...)
 
 
 ### **1. Clone仓库**

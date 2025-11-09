@@ -43,6 +43,7 @@ Settings -> Project: sanic-web -> Project Interpreter -> Add -> Existing environ
     - 可修改**NEO4J_URI**  Neo4j数据库连接地址
     - 可修改**NEO4J_USER** Neo4j数据库用户名
     - 可修改**NEO4J_PASSWORD** Neo4j数据库密码
+    - **必须修改TAVILY_API_KEY** Tavily搜索配置
     - **必须修改MINIO_ACCESS_KEY** MinIO服务Key
     - **必须修改MINIO_SECRET_KEY** MinIO服务密钥
     - **必须修改DIFY_DATABASE_QA_API_KEY** Dify智能体Api-Key

@@ -23,7 +23,6 @@ dependencies = [
     "seaborn>=0.13.2,<0.14.0",
     "pdfplumber>=0.11.3,<0.12.0",
     "python-docx>=1.1.2,<2.0.0",
-    "ollama>=0.3.1,<0.4.0",
     "python-dotenv>=1.0.1,<2.0.0",
     "minio>=7.2.8,<8.0.0",
     "pyjwt>=2.9.0,<3.0.0",
@@ -37,14 +36,12 @@ dependencies = [
     "pymysql>=1.1.1",
     "mcp>=1.12.2",
     "openai>=1.97.0",
-    "langchain>=0.3.27",
+    "langchain>=1.0.0",
     "langgraph>=0.6.3",
-    "langchain-openai>=0.3.28",
     "langchain-mcp-adapters>=0.1.9",
     "langchain-community>=0.3.27",
     "sqlacodegen>=3.1.0",
     "pydantic>=2.11.7",
-    "dashscope>=1.24.1",
     "sqlglot>=27.8.0",
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.6.18",
@@ -57,8 +54,23 @@ dependencies = [
     "jieba>=0.42.1",
     "colorlog>=6.9.0",
     "faiss-cpu>=1.12.0",
+    "langsmith",
+    "tavily-python",
+    "deepagents",
+    "langchain-ollama>=1.0.0a1",
+    "dashscope>=1.25.0",
+    "langchain-openai>=1.0.2",
 ]
 
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple"
 default = true
+
+
+# ⚠️ 注意：添加新依赖时，请使用：
+# uv add <package> --frozen
+# 以防止意外升级已有依赖版本。
+# uv 不会在配置中自动阻止升级行为。
+
+# 固定版本避免了依赖版本升级带来的问题。
+# uv pip freeze > requirements.txt

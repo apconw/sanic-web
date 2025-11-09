@@ -49,8 +49,8 @@ EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME")
 
 # 初始化 DashScope 客户端
 if USE_DASHSCOPE_EMBEDDING:
-    MODEL_API_KEY = os.getenv("MODEL_API_KEY")
-    MODEL_BASE_URL = os.getenv("MODEL_BASE_URL")
+    MODEL_API_KEY = os.getenv("SMALL_MODEL_API_KEY")
+    MODEL_BASE_URL = os.getenv("SMALL_MODEL_BASE_URL")
     if not MODEL_API_KEY:
         raise ValueError("环境变量 MODEL_API_KEY 未设置，无法初始化嵌入模型客户端")
     client = OpenAI(api_key=MODEL_API_KEY, base_url=MODEL_BASE_URL)

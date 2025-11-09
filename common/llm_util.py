@@ -1,6 +1,7 @@
 import os
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.chat_models.tongyi import ChatTongyi
+from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 
 def get_llm():
@@ -29,13 +30,15 @@ def get_llm():
             temperature=temperature,
             base_url=model_base_url,
             api_key=model_api_key,
+            extra_body={"enable_thinking": False},
         ),
         "qwen": lambda: ChatTongyi(
             model=model_name,
             api_key=model_api_key,
-            # temperature=0.7,
             streaming=True,
+            model_kwargs={"temperature": temperature},
         ),
+        "ollama": lambda: ChatOllama(model=model_name, temperature=temperature, base_url=model_base_url),
     }
 
     if model_type in model_map:

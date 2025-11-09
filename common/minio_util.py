@@ -7,7 +7,7 @@ import os
 import traceback
 from datetime import timedelta
 from uuid import uuid4
-
+import requests
 import pandas as pd
 import pymupdf
 import pymupdf4llm
@@ -53,7 +53,8 @@ class MinioUtils:
             logger.error(f"Error checking or creating bucket {bucket_name}: {err}")
             raise MyException(SysCode.c_9999)
 
-    def upload_file_from_request(self, request: Request, bucket_name: str = "filedata") -> dict:
+    def upload_file_from_request(self, request: Request, bucket_name: str = "filedata",
+                                 object_name: str = None) -> dict:
         """
         从请求中读取文件数据并上传到MinIO服务器，返回预签名URL。
 
@@ -70,7 +71,9 @@ class MinioUtils:
 
             file_stream = io.BytesIO(file_data.body)
             file_length = len(file_data.body)
-            object_name = file_data.name
+            if object_name is None:
+                # uuid可以避免不同用户上传同名文件 导致minio的文件被覆盖
+                object_name = f"{uuid4()}__{file_data.name}"
 
             self.ensure_bucket(bucket_name)
             self.client.put_object(bucket_name, object_name, file_stream, file_length, content_type=file_data.type)
@@ -141,14 +144,15 @@ class MinioUtils:
                 raise MyException(SysCode.c_9999, "未找到文件数据")
 
             content = io.BytesIO(file_data.body)
-            object_name = file_data.name
+            # uuid可以避免不同用户上传同名文件 导致minio的文件被覆盖
+            object_name = f"{uuid4()}__{file_data.name}"
             mime_type = file_data.type
             file_suffix = ".txt"
             # 可选：添加文件大小限制（例如 50MB）
             if len(file_data.body) > 50 * 1024 * 1024:
                 raise MyException(SysCode.c_9999, "文件大小超出限制")
 
-            source_file_key = self.upload_file_from_request(request, bucket_name)
+            source_file_key = self.upload_file_from_request(request, bucket_name, object_name)
 
             # 校验 MIME 类型是否支持（增强安全性）
             allowed_mimes = {
@@ -333,17 +337,34 @@ class MinioUtils:
             logger.error(f"读取Excel文件时出错: {e}")
             raise MyException(SysCode.c_9999, "Excel解析失败") from e
 
-    @staticmethod
-    def read_pdf_text_from_bytes(file_bytes):
+    def read_pdf_text_from_bytes(self, file_bytes):
         """
         从字节数据中读取文件返回markdown文本 缺点不支持图片解析 如果开启需要走公网服务
         :param file_bytes: bytes, PDF 文件的二进制内容
         :return: str, 提取的文本内容
         """
         try:
-            doc = pymupdf.open(stream=file_bytes)
-            md_text = pymupdf4llm.to_markdown(doc=doc, ignore_images=True)
-            return md_text
+            with pymupdf.open(stream=file_bytes) as doc:
+                has_text = False
+                has_images = False
+
+                # 合并一次遍历判断文本和图像
+                for page in doc:
+                    if not has_text and len(page.get_text("text").strip()) > 0:
+                        has_text = True
+                    if not has_images and len(page.get_images(full=True)) > 0:
+                        has_images = True
+                    if has_text and has_images:
+                        break  # 提前退出，避免多余遍历
+
+                if has_text and has_images:
+                    # 场景：文字/纯图片/扫描件 PDF → 调用 MinerU OCR 服务
+                    logger.info("检测到扫描件PDF，调用私有化MinerU服务进行OCR...")
+                    full_text = self._call_mineru_ocr_service(file_bytes)
+                else:
+                    # 场景：普通可读PDF → 使用 pymupdf 提取 Markdown
+                    full_text = pymupdf4llm.to_markdown(doc=doc, ignore_images=True)
+                return full_text
         except Exception as e:
             logger.error(f"读取文本时出错: {e}")
             raise MyException(SysCode.c_9999, "PDF 解析失败") from e
@@ -389,3 +410,41 @@ class MinioUtils:
 
         # 使用分隔线连接各部分
         return "\n----------\n".join(result_parts) if result_parts else ""
+
+    @staticmethod
+    def _call_mineru_ocr_service(pdf_bytes: bytes) -> str:
+        """
+        调用私有化部署的 MinerU 服务进行 PDF OCR 解析。
+
+        参数:
+            pdf_bytes (bytes): PDF 文件的二进制数据
+
+        返回:
+            str: OCR 解析后的文本内容
+
+        异常:
+            MyException: 当 MinerU 服务调用失败时抛出
+        """
+        try:
+            # 🔧 配置 MinerU 服务地址（私有化部署）
+            mineru_api_url = os.getenv("MINERU_API_RUL")
+            headers = {
+                "Authorization": "Bearer your-secret-token",  # 可选认证
+            }
+
+            files = {"file": ("document.pdf", pdf_bytes, "application/pdf")}
+
+            response = requests.post(mineru_api_url, files=files, headers=headers, timeout=300)  # 支持大文件，超时5分钟
+
+            if response.status_code != 200:
+                raise MyException(SysCode.c_9999, f"MinerU服务返回错误: {response.status_code}")
+
+            result = response.json()
+            return result.get("text", "") or result.get("content", "")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"调用MinerU服务失败: {e}")
+            raise MyException(SysCode.c_9999, "OCR服务不可用，请检查网络或服务状态") from e
+        except Exception as e:
+            logger.error(f"解析MinerU返回结果失败: {e}")
+            raise MyException(SysCode.c_9999, "OCR解析结果异常") from e

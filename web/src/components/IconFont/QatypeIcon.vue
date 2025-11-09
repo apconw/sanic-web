@@ -14,7 +14,7 @@ const buttonLabel = computed(() => {
     case 'FILEDATA_QA':
       return '表格问答'
     case 'REPORT_QA':
-      return '报告问答'
+      return '深度搜索'
     default:
       return '智能问答'
   }

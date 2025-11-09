@@ -4,3 +4,4 @@ docker/
 tests/
 web/
 images/
+vector_index/

@@ -251,16 +251,16 @@ const checkAllFilesUploaded = () => {
     return false
   }
   if (qa_type.value === 'REPORT_QA' && pendingFiles.length > 0) {
-    window.$ModalMessage.warning('深度搜索暂不支持文件上传(你可以输入“大模型”)，功能正在开发中..')
+    window.$ModalMessage.warning('深度搜索暂不支持文件上传')
     return false
   }
 
   // 新增：表格问答只支持单个excel文件
   if (qa_type.value === 'FILEDATA_QA') {
-    if (pendingFiles.length > 1) {
-      window.$ModalMessage.warning('表格问答只支持上传单个文件')
-      return false
-    }
+    // if (pendingFiles.length > 1) {
+    //   window.$ModalMessage.warning('表格问答只支持上传单个文件')
+    //   return false
+    // }
 
     if (pendingFiles.length === 1) {
       const file = pendingFiles[0]
@@ -286,11 +286,11 @@ const checkAllFilesUploaded = () => {
 
 // 提交对话
 const handleCreateStylized = async (send_text = '', file_key = []) => {
-  if (qa_type.value === 'REPORT_QA') {
-    window.$ModalMessage.warning('深度搜索功能暂不支持，功能正在开发中..')
-    inputTextString.value = ''
-    return
-  }
+  // if (qa_type.value === 'REPORT_QA') {
+  //   window.$ModalMessage.warning('深度搜索功能暂不支持，功能正在开发中..')
+  //   inputTextString.value = ''
+  //   return
+  // }
 
   // 设置背景颜色
   backgroundColorVariable.value = '#f6f7fb'

@@ -1,15 +1,19 @@
-import os
 import logging
+import os
 
+from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import InMemorySaver
 
+from agent.middleware.customer_middleware import modify_args
 from agent.text2sql.state.agent_state import AgentState
+from common.llm_util import get_llm
 
 """
 AntV mcp 数据渲染节点
 """
+
+memory = InMemorySaver()
 
 
 async def data_render_ant(state: AgentState):
@@ -31,28 +35,13 @@ async def data_render_ant(state: AgentState):
     chart_type = state["chart_type"]
     tools = await client.get_tools()
     tools = [tool for tool in tools if tool.name == chart_type]
-
-    llm = ChatOpenAI(
-        model=os.getenv("MODEL_NAME", "qwen-plus"),
-        temperature=float(os.getenv("MODEL_TEMPERATURE", 0.75)),
-        base_url=os.getenv("MODEL_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
-        api_key=os.getenv("MODEL_API_KEY"),
-        # max_tokens=int(os.getenv("MAX_TOKENS", 20000)),
-        top_p=float(os.getenv("TOP_P", 0.8)),
-        frequency_penalty=float(os.getenv("FREQUENCY_PENALTY", 0.0)),
-        presence_penalty=float(os.getenv("PRESENCE_PENALTY", 0.0)),
-        timeout=float(os.getenv("REQUEST_TIMEOUT", 30.0)),
-        max_retries=int(os.getenv("MAX_RETRIES", 3)),
-        streaming=os.getenv("STREAMING", "True").lower() == "true",
-        # 将额外参数通过 extra_body 传递
-        extra_body={},
-    )
+    llm = get_llm()
 
     result_data = state["execution_result"]
-    chart_agent = create_react_agent(
+    chart_agent = create_agent(
         model=llm,
         tools=tools,
-        prompt=f"""
+        system_prompt=f"""
         你是一位经验丰富的BI专家，必须严格按照以下步骤操作，并且必须调用MCP图表工具：
 
         ### 重要说明
@@ -67,22 +56,20 @@ async def data_render_ant(state: AgentState):
         4. **生成图表**：调用MCP工具并等待真实响应
         5. **返回结果**：只返回真实的图表链接
 
-        ### 输入数据
-        {result_data}
-
         ### 严格要求
         - 必须实际调用MCP工具，不能模拟或假设
         - 必须返回真实的图表链接，不能返回示例链接
         - x轴和y轴标签使用中文
         - 如果无法生成图表，请说明具体原因
-
-        ### 返回格式
-        ![图表](真实的图表链接)
+        - 工具调用成功后，返回真实的图表链接，格式如下： "![图表名称](真实的图表链接)"
+        
+        请注意，你必须严格遵守这些要求，否则你的回答将被视为无效。
         """,
+        middleware=[modify_args],
     )
 
     result = await chart_agent.ainvoke(
-        {"messages": [("user", "根据输入数据选择合适的MCP图表工具进行渲染")]},
+        {"messages": [("user", f"输入数据如下:\n<data>{result_data}</data>")]},
         config={"configurable": {"thread_id": "chart-render"}},
     )
 

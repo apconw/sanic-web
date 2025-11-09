@@ -1,7 +1,7 @@
 import json
 import traceback
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from datetime import datetime
 import logging
 
@@ -21,16 +21,18 @@ def sql_generate_excel(state):
           - 根据用户问题生成一条优化的SQL语句。
           - 根据查询生成逻辑从**图表定义**中选择最合适的图表类型。
 
-        ## 约束条件
-         1. 你必须仅生成一条合法、可执行的SQL查询语句 —— 不得包含解释、Markdown、注释或额外文本。
-         2. **必须直接且完整地使用所提供的表结构和表关系来生成SQL语句**。
-         3. 你必须严格遵守数据类型、外键关系及表结构中定义的约束。
-         4. 使用适当的SQL子句（JOIN、WHERE、GROUP BY、HAVING、ORDER BY、LIMIT等）以确保准确性和性能。
-         5. 若问题涉及时序，请合理使用提供的“当前时间”上下文（例如用于相对日期计算）。
-         6. 不得假设表结构中未明确定义的列或表。
-         7. 如果用户问题模糊或者缺乏足够的信息以生成正确的查询，请返回：`NULL`
-         8. 当用户明确要求查看明细数据且未指定具体数量时，应适当限制返回结果数量（如LIMIT 50）以提高查询性能，但如果用户指定了具体数量则按照用户要求执行
-         9. 对于聚合查询或统计类查询，不应随意添加LIMIT子句
+        ## 生成SQL要求：
+         - 你必须仅生成一条合法、可执行的SQL查询语句 ， 不得包含解释、Markdown、注释或额外文本。
+         - **必须直接且完整地使用所提供的表结构和表关系来生成SQL语句**，表的格式必须是 catalog_name.table_name 的形式，生成的SQL语句中的catalog、table、column 必须用 "" 符号包裹。
+         - 你必须严格遵守数据类型、外键关系及表结构中定义的约束。当没有表的关联关系时，你可以根据样例数据进行推断。
+         - 不得假设表结构中未明确定义的列或表。
+         - 显式声明所有JOIN条件（禁止自然连接）；注意join性能，尽可能的在join之间先进行‘group by’操作以减少join的数据量。
+         - 当遇到复杂查询时，使用WITH CTE分层组织复杂逻辑。
+         - 若问题涉及时序，请合理使用提供的“当前时间”上下文（例如用于相对日期计算）。
+         - 如果用户问题模糊或者缺乏足够的信息以生成正确的查询，请返回：`NULL`
+         - 当用户明确要求查看明细数据且未指定具体数量时，应适当限制返回结果数量（如LIMIT 50）以提高查询性能，但如果用户指定了具体数量则按照用户要求执行
+         - 对于聚合查询或统计类查询，不应随意添加LIMIT子句
+
 
        ## 提供的信息
         - 表结构：{db_schema}
@@ -78,22 +80,34 @@ def sql_generate_excel(state):
     chain = prompt | llm
 
     try:
-        response = chain.invoke(
-            {
-                "db_schema": state["db_info"],
-                "user_query": state["user_query"],
-                "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            }
-        )
+        # 构建详细的上下文信息
+        context = {
+            "db_schema": state["db_info"],
+            "user_query": state["user_query"],
+            "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+        # 添加调试信息
+        logger.info(f"可用的catalog: {list(state.get('catalog_info', {}).keys())}")
+        logger.info(f"可用的表: {[table['table_name'] for table in state['db_info']]}")
+
+        response = chain.invoke(context)
 
         clean_json_str = response.content.strip().removeprefix("```json").strip().removesuffix("```").strip()
-        state["generated_sql"] = json.loads(clean_json_str)["sql_query"]
+        result = json.loads(clean_json_str)
+
+        generated_sql = result["sql_query"]
+
+        state["generated_sql"] = generated_sql
         # mcp-hub 服务默认添加前缀防止重复问题
-        state["chart_type"] = "mcp-server-chart-" + json.loads(clean_json_str)["chart_type"]
+        state["chart_type"] = "mcp-server-chart-" + result["chart_type"]
+
+        logger.info(f"生成的SQL: {generated_sql}")
+        logger.info(f"推荐的图表: {state['chart_type']}")
 
     except Exception as e:
         traceback.print_exception(e)
-        logger.error(f"Error in generating: {e}")
+        logger.error(f"Error in generating SQL: {e}")
         state["generated_sql"] = "No SQL query generated"
 
     return state
