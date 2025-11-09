@@ -1,18 +1,21 @@
-import os
 import logging
+import os
 
+from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.prebuilt import create_react_agent
 
+from agent.middleware.customer_middleware import modify_args
 from agent.text2sql.state.agent_state import AgentState
+from common.llm_util import get_llm
 
 """
 AntV mcp 数据渲染节点
 """
 
 memory = InMemorySaver()
+
+
 async def data_render_ant(state: AgentState):
     """
     蚂蚁antV数据图表渲染
@@ -32,28 +35,13 @@ async def data_render_ant(state: AgentState):
     chart_type = state["chart_type"]
     tools = await client.get_tools()
     tools = [tool for tool in tools if tool.name == chart_type]
-
-    llm = ChatOpenAI(
-        model=os.getenv("MODEL_NAME", "qwen-plus"),
-        temperature=float(os.getenv("MODEL_TEMPERATURE", 0.75)),
-        base_url=os.getenv("MODEL_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
-        api_key=os.getenv("MODEL_API_KEY"),
-        # max_tokens=int(os.getenv("MAX_TOKENS", 20000)),
-        top_p=float(os.getenv("TOP_P", 0.8)),
-        frequency_penalty=float(os.getenv("FREQUENCY_PENALTY", 0.0)),
-        presence_penalty=float(os.getenv("PRESENCE_PENALTY", 0.0)),
-        timeout=float(os.getenv("REQUEST_TIMEOUT", 30.0)),
-        max_retries=int(os.getenv("MAX_RETRIES", 3)),
-        streaming=os.getenv("STREAMING", "True").lower() == "true",
-        # 将额外参数通过 extra_body 传递
-        extra_body={},
-    )
+    llm = get_llm()
 
     result_data = state["execution_result"]
-    chart_agent = create_react_agent(
+    chart_agent = create_agent(
         model=llm,
         tools=tools,
-        prompt=f"""
+        system_prompt=f"""
         你是一位经验丰富的BI专家，必须严格按照以下步骤操作，并且必须调用MCP图表工具：
 
         ### 重要说明
@@ -76,7 +64,8 @@ async def data_render_ant(state: AgentState):
         - 工具调用成功后，返回真实的图表链接，格式如下： "![图表名称](真实的图表链接)"
         
         请注意，你必须严格遵守这些要求，否则你的回答将被视为无效。
-        """
+        """,
+        middleware=[modify_args],
     )
 
     result = await chart_agent.ainvoke(

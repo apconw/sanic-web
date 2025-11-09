@@ -1,3 +1,8 @@
+"""
+上下文管理实验 目前未使用
+压缩、裁剪、卸载、保存上下文
+"""
+
 import asyncio
 import logging
 import os

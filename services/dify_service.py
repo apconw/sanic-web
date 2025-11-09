@@ -7,8 +7,9 @@ import traceback
 import aiohttp
 import requests
 
+from agent.common_react_agent import CommonReactAgent
+from agent.deep_research_agent import DeepAgent
 from agent.excel.excel_agent import ExcelAgent
-from agent.common_react_agent import LangGraphReactAgent
 from agent.text2sql.text2_sql_agent import Text2SqlAgent
 from common.exception import MyException
 from constants.code_enum import (
@@ -33,9 +34,10 @@ class QaContext:
         self.chat_id = chat_id
 
 
-common_agent = LangGraphReactAgent()
+common_agent = CommonReactAgent()
 sql_agent = Text2SqlAgent()
 excel_agent = ExcelAgent()
+deep_agent = DeepAgent()
 
 
 class DiFyRequest:
@@ -90,6 +92,10 @@ class DiFyRequest:
             elif qa_type == DiFyAppEnum.FILEDATA_QA.value[0]:
                 # cleaned_query = file_list[0]["source_file_key"] + "|" + query
                 await excel_agent.run_excel_agent(cleaned_query, res, chat_id, uuid_str, token, file_list)
+                return None
+            elif qa_type == DiFyAppEnum.REPORT_QA.value[0]:
+                # cleaned_query = file_list[0]["source_file_key"] + "|" + query
+                await deep_agent.run_agent(cleaned_query, res, chat_id, uuid_str, token, file_list)
                 return None
 
             # 封装问答上下文信息
@@ -498,7 +504,7 @@ async def stop_dify_chat(request, task_id, qa_type) -> dict:
     if qa_type == DiFyAppEnum.COMMON_QA.value[0]:
         user_dict = await decode_jwt_token(token)
         task_id = user_dict["id"]
-        success = await agent.cancel_task(task_id)
+        success = await common_agent.cancel_task(task_id)
         return {"success": success, "message": "任务已停止" if success else "未找到任务"}
 
     elif qa_type == DiFyAppEnum.DATABASE_QA.value[0]:
