@@ -1,5 +1,6 @@
-from typing import TypedDict, Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 
 class ValidationResult(BaseModel):

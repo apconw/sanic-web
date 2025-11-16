@@ -89,7 +89,7 @@ def sql_generate(state):
             }
         )
 
-        state["attempts"] += 1
+        # state["attempts"] += 1
         clean_json_str = response.content.strip().removeprefix("```json").strip().removesuffix("```").strip()
         state["generated_sql"] = json.loads(clean_json_str)["sql_query"]
         # mcp-hub 服务默认添加前缀防止重复问题

@@ -60,6 +60,7 @@ dependencies = [
     "langchain-ollama>=1.0.0a1",
     "dashscope>=1.25.0",
     "langchain-openai>=1.0.2",
+    "langgraph-cli[inmem]>=0.4.7",
 ]
 
 [[tool.uv.index]]

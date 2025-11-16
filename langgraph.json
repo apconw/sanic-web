@@ -1,0 +1,9 @@
+{
+  "dependencies": ["."],
+  "entrypoint": "serv.py",
+  "graphs": {
+    "text2sql": "agent.text2sql.analysis.graph:create_graph",
+    "execl": "agent.excel.excel_graph:create_excel_graph"
+  },
+  "env": ".env.dev"
+}
