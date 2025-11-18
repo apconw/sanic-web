@@ -2,14 +2,16 @@ import os
 from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
+from langfuse.langchain import CallbackHandler
 
 
-def get_llm():
+def get_llm(temperature=None):
     model_type = os.getenv("MODEL_TYPE", "qwen").strip()
     model_name = os.getenv("MODEL_NAME", "qwen-plus")
     temperature_str = os.getenv("MODEL_TEMPERATURE", "0.75")
     model_api_key = os.getenv("MODEL_API_KEY")
     model_base_url = os.getenv("MODEL_BASE_URL")
+    enable_langfuse = os.getenv("ENABLE_LANGFUSE", "false").lower() == "true"
 
     # 校验必要参数
     if not model_type:
@@ -18,11 +20,16 @@ def get_llm():
     if not model_api_key:
         raise ValueError("Environment variable MODEL_API_KEY is required.")
 
-    # 安全转换 temperature
     try:
-        temperature = float(temperature_str)
+        if temperature is not None:
+            temperature = float(temperature)
+        else:
+            temperature = float(temperature_str)
     except ValueError:
-        raise ValueError(f"Invalid MODEL_TEMPERATURE value: {temperature_str}. Must be a float.")
+        temperature = 0  # 或者设置默认值
+
+    # 根据是否启用 langfuse 设置 callbacks
+    callbacks = [CallbackHandler()] if enable_langfuse else []
 
     model_map = {
         "openai": lambda: ChatOpenAI(
@@ -31,14 +38,18 @@ def get_llm():
             base_url=model_base_url,
             api_key=model_api_key,
             extra_body={"enable_thinking": False},
+            callbacks=callbacks,
         ),
         "qwen": lambda: ChatTongyi(
             model=model_name,
             api_key=model_api_key,
             streaming=True,
             model_kwargs={"temperature": temperature},
+            callbacks=callbacks,
         ),
-        "ollama": lambda: ChatOllama(model=model_name, temperature=temperature, base_url=model_base_url),
+        "ollama": lambda: ChatOllama(
+            model=model_name, temperature=temperature, base_url=model_base_url, callbacks=callbacks
+        ),
     }
 
     if model_type in model_map:

@@ -61,6 +61,8 @@ dependencies = [
     "dashscope>=1.25.0",
     "langchain-openai>=1.0.2",
     "langgraph-cli[inmem]>=0.4.7",
+    "langfuse>=3.10.0",
+    "yfinance>=0.2.66",
 ]
 
 [[tool.uv.index]]

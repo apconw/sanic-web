@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def sql_generate(state):
 
-    llm = get_llm()
+    llm = get_llm(0)
 
     prompt = ChatPromptTemplate.from_template(
         """
@@ -24,7 +24,8 @@ def sql_generate(state):
           
         ## 约束条件
          1. 你必须仅生成一条合法、可执行的SQL查询语句 —— 不得包含解释、Markdown、注释或额外文本。
-         2. **必须直接且完整地使用所提供的表结构和表关系来生成SQL语句**。
+         2. **你必须严格且完整地仅使用所提供的表结构和表关系中明确定义的表名与列名。禁止引入、假设、拼写错误或引用任何未在 {db_schema} 和 {table_relationship} 
+         中显式声明的表、字段、别名或虚拟列。即使常见命名（如 id、name、created_at）也仅在表结构中存在时才可使用。**
          3. 你必须严格遵守数据类型、外键关系及表结构中定义的约束。
          4. 使用适当的SQL子句（JOIN、WHERE、GROUP BY、HAVING、ORDER BY、LIMIT等）以确保准确性和性能。
          5. 若问题涉及时序，请合理使用提供的“当前时间”上下文（例如用于相对日期计算）。

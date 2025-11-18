@@ -90,14 +90,26 @@ const handleLogin = () => {
 </template>
 
 <style scoped>
-/* 保持原有的样式 */
-
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* 使容器高度为视口高度 */
-  background: linear-gradient(to bottom, #5e58e7, white);
+  height: 100vh;
+
+  /* 设置毛玻璃背景 */
+
+  background: url('https://picsum.photos/1920/1080?random=1') no-repeat center center fixed;
+  background-size: cover;
+}
+
+/* 毛玻璃卡片样式 */
+
+.n-card {
+  backdrop-filter: blur(10px); /* 毛玻璃模糊效果 */
+  background: rgb(255 255 255 / 20%)!important; /* 半透明背景 */
+  border-radius: 15px!important;
+  border: 1px solid rgb(255 255 255 / 18%);
+  box-shadow: 0 8px 32px 0 rgb(31 38 135 / 37%)!important;
 }
 
 body,
@@ -115,7 +127,7 @@ html {
   transition: opacity 0.5s ease;
 }
 
-.fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
+.fade-enter, .fade-leave-to {
   opacity: 0;
 }
 </style>
