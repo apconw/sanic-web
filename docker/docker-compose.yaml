@@ -8,6 +8,8 @@ services:
       - ./nginx.conf.template:/etc/nginx/conf.d/default.conf
     ports:
       - "8081:80"
+    networks:
+      - chat-network
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -19,6 +21,8 @@ services:
     ports:
       - "19000:9000"
       - "19001:9001"
+    networks:
+      - chat-network
     volumes:
       - ./volume/minio/data:/data
     environment:
@@ -62,14 +66,18 @@ services:
       TZ: Asia/Shanghai
     ports:
       - "${SERVER_PORT:-8089}:${SERVER_PORT:-8089}"
+    networks:
+      - chat-network
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
   mysql:
     image: mysql:latest
-    container_name: chat-db
+    container_name: mysql-db
     ports:
       - "13006:3306"
+    networks:
+      - chat-network
     environment:
       - MYSQL_ROOT_PASSWORD=1
       - CHARACTER_SET_SERVER=utf8mb4
@@ -84,6 +92,8 @@ services:
     container_name: mcphub
     ports:
       - "3300:3000"
+    networks:
+      - chat-network
     volumes:
       - ./volume/mcp-data/mcp_settings.json:/app/mcp_settings.json
     extra_hosts:
@@ -94,6 +104,8 @@ services:
     container_name: gpt-vis-api
     ports:
       - "3100:3000"
+    networks:
+      - chat-network
     environment:
       MINIO_USE_SSL: "false"
       MINIO_PORT: ${MINIO_PORT:-}
@@ -111,6 +123,8 @@ services:
     ports:
       - "7474:7474"
       - "7687:7687"
+    networks:
+      - chat-network
     volumes:
       - ./volume/neo4j/data:/data
       - ./volume/neo4j/plugins:/plugins
@@ -119,3 +133,7 @@ services:
       - apoc.import.file.enabled=true
       - apoc.import.file.use_neo4j_config=true
       - NEO4J_AUTH=neo4j/neo4j123
+
+networks:
+  chat-network:
+    driver: bridge
