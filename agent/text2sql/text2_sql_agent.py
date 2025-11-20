@@ -10,6 +10,8 @@ from agent.text2sql.analysis.graph import create_graph
 from agent.text2sql.state.agent_state import AgentState
 from constants.code_enum import DataTypeEnum, DiFyAppEnum
 from services.user_service import add_user_record, decode_jwt_token
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +26,16 @@ class Text2SqlAgent:
         self.running_tasks = {}
         # 获取环境变量控制是否显示思考过程，默认为开启
         self.show_thinking_process = os.getenv("SHOW_THINKING_PROCESS", "true").lower() == "true"
+        # 是否启用链路追踪
+        self.ENABLE_TRACING = os.getenv("ENABLE_TRACING", "true").lower() == "true"
 
     async def run_agent(
-        self, query: str, response=None, chat_id: str = None, uuid_str: str = None, user_token=None
+        self,
+        query: str,
+        response=None,
+        chat_id: str = None,
+        uuid_str: str = None,
+        user_token=None,
     ) -> None:
         """
         运行智能体
@@ -35,7 +44,6 @@ class Text2SqlAgent:
         :param chat_id: 会话ID，用于区分同一轮对话
         :param uuid_str: 自定义ID，用于唯一标识一次问答
         :param user_token: 用户登录的token
-        "summarize", "data_render", "data_render_apache" 节点数据正常显示不包裹在<details>中
         :return: None
         """
         t02_answer_data = []
@@ -52,32 +60,44 @@ class Text2SqlAgent:
             task_context = {"cancelled": False}
             self.running_tasks[task_id] = task_context
 
-            async for chunk_dict in graph.astream(initial_state, stream_mode="updates"):
+            # 准备 tracing 配置
+            callbacks = []
+            config = {}
+            if self.ENABLE_TRACING:
+                langfuse_handler = CallbackHandler()
+                callbacks = [langfuse_handler]
+                config = {
+                    "callbacks": callbacks,
+                    "metadata": {
+                        "langfuse_session_id": uuid_str,
+                    },
+                }
 
-                # 检查是否已取消
-                if self.running_tasks[task_id]["cancelled"]:
-                    if self.show_thinking_process:
-                        await self._send_response(response, "</details>\n\n", "continue", DataTypeEnum.ANSWER.value[0])
-                    await response.write(
-                        self._create_response("\n> 这条消息已停止", "info", DataTypeEnum.ANSWER.value[0])
-                    )
-                    # 发送最终停止确认消息
-                    await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
-                    break
+            # 异步流式执行
+            stream_kwargs = {
+                "input": initial_state,
+                "stream_mode": "updates",
+                "config": config,
+            }
 
-                logger.info(f"Processing chunk: {chunk_dict}")
+            # 如果启用 tracing，包裹在 trace 上下文中
+            if self.ENABLE_TRACING:
+                langfuse = get_client()
+                with langfuse.start_as_current_observation(
+                    input=query,
+                    as_type="agent",
+                    name="数据问答",
+                ) as rootspan:
+                    rootspan.update_trace(session_id=uuid_str)
 
-                langgraph_step, step_value = next(iter(chunk_dict.items()))
-
-                # 处理步骤变更
-                current_step, t02_answer_data = await self._handle_step_change(
-                    response, current_step, langgraph_step, t02_answer_data
-                )
-
-                # 处理具体步骤内容
-                if step_value:
-                    await self._process_step_content(
-                        response, langgraph_step, step_value, t02_answer_data, t04_answer_data
+                    async for chunk_dict in graph.astream(**stream_kwargs):
+                        current_step, t02_answer_data = await self._process_chunk(
+                            chunk_dict, response, task_id, current_step, t02_answer_data, t04_answer_data
+                        )
+            else:
+                async for chunk_dict in graph.astream(**stream_kwargs):
+                    current_step, t02_answer_data = await self._process_chunk(
+                        chunk_dict, response, task_id, current_step, t02_answer_data, t04_answer_data
                     )
 
             # 流结束时关闭最后的details标签
@@ -105,6 +125,40 @@ class Text2SqlAgent:
             logger.error(f"Error in run_agent: {str(e)}", exc_info=True)
             error_msg = f"处理过程中发生错误: {str(e)}"
             await self._send_response(response, error_msg, "error")
+
+    async def _process_chunk(
+        self,
+        chunk_dict,
+        response,
+        task_id,
+        current_step,
+        t02_answer_data,
+        t04_answer_data,
+    ):
+        """
+        处理单个流式块数据
+        """
+        # 检查是否已取消
+        if task_id in self.running_tasks and self.running_tasks[task_id]["cancelled"]:
+            if self.show_thinking_process:
+                await self._send_response(response, "</details>\n\n", "continue", DataTypeEnum.ANSWER.value[0])
+            await response.write(self._create_response("\n> 这条消息已停止", "info", DataTypeEnum.ANSWER.value[0]))
+            # 发送最终停止确认消息
+            await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
+            raise asyncio.CancelledError()
+
+        langgraph_step, step_value = next(iter(chunk_dict.items()))
+
+        # 处理步骤变更
+        current_step, t02_answer_data = await self._handle_step_change(
+            response, current_step, langgraph_step, t02_answer_data
+        )
+
+        # 处理具体步骤内容
+        if step_value:
+            await self._process_step_content(response, langgraph_step, step_value, t02_answer_data, t04_answer_data)
+
+        return current_step, t02_answer_data
 
     async def _handle_step_change(
         self,

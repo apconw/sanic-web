@@ -13,6 +13,9 @@ from constants.code_enum import DataTypeEnum
 from services.user_service import decode_jwt_token, add_user_record, query_user_qa_record
 from agent.excel.excel_duckdb_manager import close_duckdb_manager, get_chat_duckdb_manager
 
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +30,8 @@ class ExcelAgent:
         # 获取环境变量控制是否显示思考过程，默认为开启
         self.show_thinking_process = os.getenv("SHOW_THINKING_PROCESS", "true").lower() == "true"
         self.excel_graph = create_excel_graph()
+        # 是否启用链路追踪
+        self.ENABLE_TRACING = os.getenv("ENABLE_TRACING", "true").lower() == "true"
 
     async def run_excel_agent(
         self,
@@ -81,32 +86,58 @@ class ExcelAgent:
             task_context = {"cancelled": False}
             self.running_tasks[task_id] = task_context
 
-            async for chunk_dict in graph.astream(initial_state, stream_mode="updates"):
-                # 检查是否已取消
-                if self.running_tasks[task_id]["cancelled"]:
-                    if self.show_thinking_process:
-                        await self._send_response(response, "</details>\n\n", "continue", DataTypeEnum.ANSWER.value[0])
-                    await response.write(
-                        self._create_response("\n> 这条消息已停止", "info", DataTypeEnum.ANSWER.value[0])
+            # 准备 tracing 配置
+            callbacks = []
+            config = {}
+            if self.ENABLE_TRACING:
+                langfuse_handler = CallbackHandler()
+                callbacks = [langfuse_handler]
+                config = {
+                    "callbacks": callbacks,
+                    "metadata": {
+                        "langfuse_session_id": uuid_str,
+                    },
+                }
+
+            # 异步流式执行参数
+            stream_kwargs = {
+                "input": initial_state,
+                "stream_mode": "updates",
+                "config": config,
+            }
+
+            # 如果启用 tracing，包裹在 trace 上下文中
+            if self.ENABLE_TRACING:
+                langfuse = get_client()
+                with langfuse.start_as_current_observation(
+                    input=query,
+                    as_type="agent",
+                    name="表格问答",
+                ) as rootspan:
+                    rootspan.update_trace(session_id=uuid_str)
+                    current_step, t02_answer_data, t04_answer_data = await self._process_graph_stream(
+                        graph,
+                        stream_kwargs,
+                        response,
+                        task_id,
+                        uuid_str,
+                        query,
+                        current_step,
+                        t02_answer_data,
+                        t04_answer_data,
                     )
-                    # 发送最终停止确认消息
-                    await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
-                    break
-
-                logger.info(f"Processing chunk: {chunk_dict}")
-
-                langgraph_step, step_value = next(iter(chunk_dict.items()))
-
-                # 处理步骤变更
-                current_step, t02_answer_data = await self._handle_step_change(
-                    response, current_step, langgraph_step, t02_answer_data
+            else:
+                current_step, t02_answer_data, t04_answer_data = await self._process_graph_stream(
+                    graph,
+                    stream_kwargs,
+                    response,
+                    task_id,
+                    uuid_str,
+                    query,
+                    current_step,
+                    t02_answer_data,
+                    t04_answer_data,
                 )
-
-                # 处理具体步骤内容
-                if step_value:
-                    await self._process_step_content(
-                        response, langgraph_step, step_value, t02_answer_data, t04_answer_data
-                    )
 
             # 流结束时关闭最后的details标签
             if self.show_thinking_process:
@@ -134,6 +165,37 @@ class ExcelAgent:
             logger.error(f"表格问答智能体运行异常: {e}")
             error_msg = f"处理过程中发生错误: {str(e)}"
             await self._send_response(response, error_msg, "error")
+
+    async def _process_graph_stream(
+        self, graph, stream_kwargs, response, task_id, uuid_str, query, current_step, t02_answer_data, t04_answer_data
+    ):
+        """
+        处理图表流数据的通用方法
+        """
+        async for chunk_dict in graph.astream(**stream_kwargs):
+            # 检查是否已取消
+            if self.running_tasks[task_id]["cancelled"]:
+                if self.show_thinking_process:
+                    await self._send_response(response, "</details>\n\n", "continue", DataTypeEnum.ANSWER.value[0])
+                await response.write(self._create_response("\n> 这条消息已停止", "info", DataTypeEnum.ANSWER.value[0]))
+                # 发送最终停止确认消息
+                await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
+                break
+
+            logger.info(f"Processing chunk: {chunk_dict}")
+
+            langgraph_step, step_value = next(iter(chunk_dict.items()))
+
+            # 处理步骤变更
+            current_step, t02_answer_data = await self._handle_step_change(
+                response, current_step, langgraph_step, t02_answer_data
+            )
+
+            # 处理具体步骤内容
+            if step_value:
+                await self._process_step_content(response, langgraph_step, step_value, t02_answer_data, t04_answer_data)
+
+        return current_step, t02_answer_data, t04_answer_data
 
     async def _handle_step_change(
         self,

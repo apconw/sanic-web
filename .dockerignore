@@ -5,3 +5,4 @@ tests/
 web/
 images/
 vector_index/
+.langgraph_api/

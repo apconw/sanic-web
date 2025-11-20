@@ -11,7 +11,6 @@ def get_llm(temperature=None):
     temperature_str = os.getenv("MODEL_TEMPERATURE", "0.75")
     model_api_key = os.getenv("MODEL_API_KEY")
     model_base_url = os.getenv("MODEL_BASE_URL")
-    enable_langfuse = os.getenv("ENABLE_LANGFUSE", "false").lower() == "true"
 
     # 校验必要参数
     if not model_type:
@@ -28,9 +27,6 @@ def get_llm(temperature=None):
     except ValueError:
         temperature = 0  # 或者设置默认值
 
-    # 根据是否启用 langfuse 设置 callbacks
-    callbacks = [CallbackHandler()] if enable_langfuse else []
-
     model_map = {
         "openai": lambda: ChatOpenAI(
             model=model_name,
@@ -38,18 +34,14 @@ def get_llm(temperature=None):
             base_url=model_base_url,
             api_key=model_api_key,
             extra_body={"enable_thinking": False},
-            callbacks=callbacks,
         ),
         "qwen": lambda: ChatTongyi(
             model=model_name,
             api_key=model_api_key,
             streaming=True,
             model_kwargs={"temperature": temperature},
-            callbacks=callbacks,
         ),
-        "ollama": lambda: ChatOllama(
-            model=model_name, temperature=temperature, base_url=model_base_url, callbacks=callbacks
-        ),
+        "ollama": lambda: ChatOllama(model=model_name, temperature=temperature, base_url=model_base_url),
     }
 
     if model_type in model_map:

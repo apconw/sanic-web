@@ -29,6 +29,20 @@ class DiFyAppEnum(Enum):
     REPORT_QA = ("REPORT_QA", "深度搜索")
 
 
+def get_qatype_name(member_name):
+    """
+    根据DiFyAppEnum枚举成员名称获取对应的中文名称
+
+    :param member_name: 枚举成员名称字符串，如 "REPORT_QA"
+    :return: 对应的中文名称字符串
+    """
+    try:
+        enum_member = DiFyAppEnum[member_name]
+        return enum_member.value[1]
+    except KeyError:
+        raise ValueError(f"'{member_name}' 不是有效的DiFyAppEnum枚举成员")
+
+
 class DataTypeEnum(Enum):
     """
     自定义数据类型枚举

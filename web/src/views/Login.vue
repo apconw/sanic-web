@@ -98,7 +98,7 @@ const handleLogin = () => {
 
   /* 设置毛玻璃背景 */
 
-  background: url('https://picsum.photos/1920/1080?random=1') no-repeat center center fixed;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   background-size: cover;
 }
 

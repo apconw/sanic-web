@@ -20,6 +20,8 @@ from common.llm_util import get_llm
 from common.minio_util import MinioUtils
 from constants.code_enum import DataTypeEnum, DiFyAppEnum
 from services.user_service import add_user_record, decode_jwt_token
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +37,9 @@ class CommonReactAgent:
 
         # 初始化LLM
         self.llm = get_llm()
+
+        # 是否启用链路追踪
+        self.ENABLE_TRACING = os.getenv("ENABLE_TRACING", "true").lower() == "true"
 
         # 使用 os.path 构建路径
         # current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -118,6 +123,16 @@ class CommonReactAgent:
             # 使用用户会话ID作为thread_id，如果未提供则使用默认值
             thread_id = session_id if session_id else "default_thread"
             config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
+
+            # 准备 tracing 配置
+            callbacks = []
+            config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
+
+            if self.ENABLE_TRACING:
+                langfuse_handler = CallbackHandler()
+                callbacks = [langfuse_handler]
+                config["callbacks"] = callbacks
+                config["metadata"] = {"langfuse_session_id": uuid_str}
 
             system_message = SystemMessage(
                 content="""
@@ -255,41 +270,24 @@ class CommonReactAgent:
             if file_as_markdown:
                 formatted_query = f"{query}\n\n参考资料内容如下：\n{file_as_markdown}"
 
-            async for message_chunk, metadata in agent.astream(
-                input={"messages": [HumanMessage(content=formatted_query)]},
-                config=config,
-                stream_mode="messages",
-            ):
-                # 检查是否已取消
-                if self.running_tasks[task_id]["cancelled"]:
-                    await response.write(
-                        self._create_response("\n> 这条消息已停止", "info", DataTypeEnum.ANSWER.value[0])
-                    )
-                    # 发送最终停止确认消息
-                    await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
-                    break
+            # 如果启用 tracing，包裹在 trace 上下文中
+            stream_args = {
+                "input": {"messages": [HumanMessage(content=formatted_query)]},
+                "config": config,
+                "stream_mode": "messages",
+            }
 
-                # print(message_chunk)
-                # 工具输出
-                if metadata["langgraph_node"] == "tools":
-                    tool_name = message_chunk.name or "未知工具"
-                    # logger.info(f"工具调用结果:{message_chunk.content}")
-                    tool_use = "> 调用工具:" + tool_name + "\n\n"
-                    await response.write(self._create_response(tool_use))
-                    t02_answer_data.append(tool_use)
-                    continue
-
-                # await response.write(self._create_response(agent.get_graph().draw_mermaid_png()))
-                # 输出最终结果
-                # print(message_chunk)
-                if message_chunk.content:
-                    content = message_chunk.content
-                    t02_answer_data.append(content)
-                    await response.write(self._create_response(content))
-                    # 确保实时输出
-                    if hasattr(response, "flush"):
-                        await response.flush()
-                    await asyncio.sleep(0)
+            if self.ENABLE_TRACING:
+                langfuse = get_client()
+                with langfuse.start_as_current_observation(
+                    input=query,
+                    as_type="agent",
+                    name="通用问答",
+                ) as rootspan:
+                    rootspan.update_trace(session_id=uuid_str)
+                    await self._stream_agent_response(agent, stream_args, response, task_id, t02_answer_data)
+            else:
+                await self._stream_agent_response(agent, stream_args, response, task_id, t02_answer_data)
 
             # 只有在未取消的情况下才保存记录
             if not self.running_tasks[task_id]["cancelled"]:
@@ -317,6 +315,34 @@ class CommonReactAgent:
             # 清理任务记录
             if task_id in self.running_tasks:
                 del self.running_tasks[task_id]
+
+    async def _stream_agent_response(self, agent, stream_args, response, task_id, t02_answer_data):
+        """处理agent流式响应的核心逻辑"""
+        async for message_chunk, metadata in agent.astream(**stream_args):
+            # 检查是否已取消
+            if self.running_tasks[task_id]["cancelled"]:
+                await response.write(self._create_response("\n> 这条消息已停止", "info", DataTypeEnum.ANSWER.value[0]))
+                # 发送最终停止确认消息
+                await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
+                break
+
+            # 工具输出
+            if metadata["langgraph_node"] == "tools":
+                tool_name = message_chunk.name or "未知工具"
+                tool_use = "> 调用工具:" + tool_name + "\n\n"
+                await response.write(self._create_response(tool_use))
+                t02_answer_data.append(tool_use)
+                continue
+
+            # 输出最终结果
+            if message_chunk.content:
+                content = message_chunk.content
+                t02_answer_data.append(content)
+                await response.write(self._create_response(content))
+                # 确保实时输出
+                if hasattr(response, "flush"):
+                    await response.flush()
+                await asyncio.sleep(0)
 
     async def cancel_task(self, task_id: str) -> bool:
         """
