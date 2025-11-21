@@ -31,7 +31,7 @@ class ExcelAgent:
         self.show_thinking_process = os.getenv("SHOW_THINKING_PROCESS", "true").lower() == "true"
         self.excel_graph = create_excel_graph()
         # 是否启用链路追踪
-        self.ENABLE_TRACING = os.getenv("ENABLE_TRACING", "true").lower() == "true"
+        self.ENABLE_TRACING = os.getenv("LANGFUSE_TRACING_ENABLED", "true").lower() == "true"
 
     async def run_excel_agent(
         self,
@@ -87,7 +87,6 @@ class ExcelAgent:
             self.running_tasks[task_id] = task_context
 
             # 准备 tracing 配置
-            callbacks = []
             config = {}
             if self.ENABLE_TRACING:
                 langfuse_handler = CallbackHandler()

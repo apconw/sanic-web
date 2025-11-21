@@ -17,7 +17,9 @@ import faiss
 import jieba
 import numpy as np
 import pandas as pd
-from openai import OpenAI
+
+# from openai import OpenAI
+from langfuse.openai import OpenAI
 from rank_bm25 import BM25Okapi
 from sqlalchemy.inspection import inspect
 from sqlalchemy.sql.expression import text

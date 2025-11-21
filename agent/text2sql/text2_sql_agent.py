@@ -27,7 +27,7 @@ class Text2SqlAgent:
         # 获取环境变量控制是否显示思考过程，默认为开启
         self.show_thinking_process = os.getenv("SHOW_THINKING_PROCESS", "true").lower() == "true"
         # 是否启用链路追踪
-        self.ENABLE_TRACING = os.getenv("ENABLE_TRACING", "true").lower() == "true"
+        self.ENABLE_TRACING = os.getenv("LANGFUSE_TRACING_ENABLED", "true").lower() == "true"
 
     async def run_agent(
         self,
@@ -61,7 +61,6 @@ class Text2SqlAgent:
             self.running_tasks[task_id] = task_context
 
             # 准备 tracing 配置
-            callbacks = []
             config = {}
             if self.ENABLE_TRACING:
                 langfuse_handler = CallbackHandler()

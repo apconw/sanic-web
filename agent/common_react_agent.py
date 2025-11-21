@@ -39,7 +39,7 @@ class CommonReactAgent:
         self.llm = get_llm()
 
         # 是否启用链路追踪
-        self.ENABLE_TRACING = os.getenv("ENABLE_TRACING", "true").lower() == "true"
+        self.ENABLE_TRACING = os.getenv("LANGFUSE_TRACING_ENABLED", "true").lower() == "true"
 
         # 使用 os.path 构建路径
         # current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -125,9 +125,6 @@ class CommonReactAgent:
             config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
 
             # 准备 tracing 配置
-            callbacks = []
-            config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
-
             if self.ENABLE_TRACING:
                 langfuse_handler = CallbackHandler()
                 callbacks = [langfuse_handler]
