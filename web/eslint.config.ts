@@ -18,10 +18,6 @@ export default antfu({
     'public',
     'src/assets/*',
   ],
-  ...pluginVue.configs['flat/base'],
-  ...pluginVue.configs['flat/essential'],
-  ...pluginVue.configs['flat/strongly-recommended'],
-  ...pluginVue.configs['flat/recommended'],
   rules: {
     'vue/prop-name-casing': 'warn',
     'vue/prefer-separate-static-class': 'off',
@@ -89,3 +85,9 @@ export default antfu({
     'eslint-comments/no-unused-enable': 'off',
   },
 })
+  .append(
+    ...pluginVue.configs['flat/base'],
+    ...pluginVue.configs['flat/essential'],
+    ...pluginVue.configs['flat/strongly-recommended'],
+    ...pluginVue.configs['flat/recommended'],
+  )
