@@ -68,7 +68,7 @@ class Text2SqlAgent:
                 config = {
                     "callbacks": callbacks,
                     "metadata": {
-                        "langfuse_session_id": uuid_str,
+                        "langfuse_session_id": chat_id,
                     },
                 }
 
@@ -87,7 +87,9 @@ class Text2SqlAgent:
                     as_type="agent",
                     name="数据问答",
                 ) as rootspan:
-                    rootspan.update_trace(session_id=uuid_str)
+                    user_info = await decode_jwt_token(user_token)
+                    user_id = user_info.get("id")
+                    rootspan.update_trace(session_id=chat_id, user_id=user_id)
 
                     async for chunk_dict in graph.astream(**stream_kwargs):
                         current_step, t02_answer_data = await self._process_chunk(

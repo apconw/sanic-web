@@ -129,7 +129,7 @@ class CommonReactAgent:
                 langfuse_handler = CallbackHandler()
                 callbacks = [langfuse_handler]
                 config["callbacks"] = callbacks
-                config["metadata"] = {"langfuse_session_id": uuid_str}
+                config["metadata"] = {"langfuse_session_id": session_id}
 
             system_message = SystemMessage(
                 content="""
@@ -281,7 +281,9 @@ class CommonReactAgent:
                     as_type="agent",
                     name="通用问答",
                 ) as rootspan:
-                    rootspan.update_trace(session_id=uuid_str)
+                    user_info = await decode_jwt_token(user_token)
+                    user_id = user_info.get("id")
+                    rootspan.update_trace(session_id=session_id, user_id=user_id)
                     await self._stream_agent_response(agent, stream_args, response, task_id, t02_answer_data)
             else:
                 await self._stream_agent_response(agent, stream_args, response, task_id, t02_answer_data)
