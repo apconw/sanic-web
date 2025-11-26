@@ -16,7 +16,8 @@ autodiscover(
     controllers,
     recursive=True,
 )
-
+# 添加api docs
+app.extend(config={"OAS_PATH_TO_REDOC_HTML": "docs/redoc.html", "OAS_PATH_TO_SWAGGER_HTML": "docs/swagger.html"})
 
 app.route("/")(lambda _: empty())
 
