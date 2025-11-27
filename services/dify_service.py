@@ -8,7 +8,7 @@ import aiohttp
 import requests
 
 from agent.common_react_agent import CommonReactAgent
-from agent.deep_research_agent import DeepAgent
+from agent.deepagent.deep_research_agent import DeepAgent
 from agent.excel.excel_agent import ExcelAgent
 from agent.text2sql.text2_sql_agent import Text2SqlAgent
 from common.exception import MyException

@@ -2,7 +2,6 @@ import os
 from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
-from langfuse.langchain import CallbackHandler
 
 
 def get_llm(temperature=None):

@@ -3,13 +3,13 @@ import json
 import logging
 import os
 import traceback
-from typing import Optional, Literal
+from typing import Optional
 
 from deepagents import create_deep_agent
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
-from tavily import TavilyClient
 
+from agent.deepagent.tools import search_web
 from common.llm_util import get_llm
 from common.minio_util import MinioUtils
 from constants.code_enum import DataTypeEnum, DiFyAppEnum
@@ -19,28 +19,7 @@ logger = logging.getLogger(__name__)
 
 minio_utils = MinioUtils()
 
-# 初始化Tavily客户端
-tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-
-
-# Web search tool
-def internet_search(
-    query: str,
-    max_results: int = 5,
-    topic: Literal["general", "news", "finance"] = "general",
-    include_raw_content: bool = False,
-):
-    """Run a web search"""
-    return tavily_client.search(
-        query,
-        include_images=True,
-        include_favicon=True,
-        search_depth="advanced",
-        include_image_descriptions=True,
-        max_results=max_results,
-        include_raw_content=include_raw_content,
-        topic=topic,
-    )
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 class DeepAgent:
@@ -58,6 +37,27 @@ class DeepAgent:
 
         # 存储运行中的任务
         self.running_tasks = {}
+
+        # === 配置参数 ===
+        self.RECURSION_LIMIT = int(os.getenv("RECURSION_LIMIT", 25))
+
+        # === 加载核心指令 ===
+        # 从 instructions.md 文件读取系统提示词
+        with open(os.path.join(current_dir, "instructions.md"), "r", encoding="utf-8") as f:
+            self.CORE_INSTRUCTIONS = f.read()
+
+        # === 加载子智能体配置 ===
+        # 从 subagents.json 文件读取各个子智能体的角色定义
+        with open(os.path.join(current_dir, "subagents.json"), "r", encoding="utf-8") as f:
+            self.subagents_config = json.load(f)
+
+        # 提取三个子智能体的配置
+        self.planner = self.subagents_config["planner"]  # 规划师
+        self.researcher = self.subagents_config["researcher"]  # 研究员
+        self.analyst = self.subagents_config["analyst"]  # 分析师
+
+        # 定义智能体可以使用的工具
+        self.tools = [search_web]
 
     @staticmethod
     def _create_response(
@@ -102,48 +102,13 @@ class DeepAgent:
             thread_id = session_id if session_id else "default_thread"
             config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
 
-            # System prompt to steer the agent to be an expert researcher
-            research_instructions = """
-            
-            你是一位专业的信息整合与内容撰写专家。请基于提供的深度搜索结果，撰写一篇结构清晰、内容权威、图文并茂的介绍性文章。要求如下：
-            
-            ## 大纲结构清晰
-            
-            - 使用层级标题（如 `## 一、公司概况`、`### 1.1 成立背景`）组织内容。
-            - 内容应涵盖：公司基本信息、发展历程、核心技术/产品、业务布局、所获荣誉、社会影响等关键维度。
-            - 若信息不足某部分，可略过，但不得虚构。
-            
-            ## 保留合适的图片与图标
-            
-            - 从搜索结果的 `images` 字段中精选 **1–3 张最具代表性** 的图片（如公司 Logo、重要合作揭牌、产品界面等）。
-            - 每张图片需以标准 Markdown 格式插入：`![描述](URL)`，并附简要说明（如“中关村科金 Logo”）。
-            - 在章节标题或关键要点前，适当使用 Unicode 图标增强可读性（例如：🏢 公司概况、🧠 核心技术、🌍 全球布局、🏆 所获荣誉、📈 业务影响 等）。
-            
-            ## 保留引用链接
-            
-            - 所有事实性陈述（如成立时间、融资金额、专利数量、榜单入选等）必须关联到原始来源。
-            - 引用格式为 Markdown 超链接：`[来源名称](URL)`，例如：[亿欧网](https://www.iyiou.com/company/zhongguancunkejin)。
-            - 避免直接复制原文长段落，应进行归纳与转述，并标注出处。
-            
-            ## 语言风格
-            
-            - 采用客观、简洁、专业的中文书面语。
-            - 面向企业决策者、投资人或行业研究者，避免过度营销化表述。
-            
-            ## 通用性要求
-            
-            - 本提示词适用于任何实体（公司、人物、技术、事件等）的深度搜索结果。
-            - 不依赖特定领域知识，仅基于工具返回的 `results` 和 `images` 数据生成内容。
-            
-            请输出纯 Markdown 格式文本，无需额外解释或包装。
-            """
-
             agent = create_deep_agent(
+                tools=self.tools,  # 可用工具列表
+                system_prompt=self.CORE_INSTRUCTIONS,  # 系统提示词
+                subagents=[self.researcher, self.analyst],
                 model=self.llm,
-                tools=[internet_search],
-                system_prompt=research_instructions,
-                checkpointer=self.checkpointer,
-            )
+                backend=self.checkpointer,
+            ).with_config({"recursion_limit": self.RECURSION_LIMIT})
 
             # 如果有文件内容，则将其添加到查询中
             formatted_query = query
@@ -152,6 +117,7 @@ class DeepAgent:
                 config=config,
                 stream_mode="messages",
             ):
+                print(message_chunk)
                 # 检查是否已取消
                 if self.running_tasks[task_id]["cancelled"]:
                     await response.write(
