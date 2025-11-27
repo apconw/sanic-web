@@ -45,8 +45,8 @@ tools = [search_web]
 llm = ChatOpenAI(
     model=os.getenv("MODEL_NAME", "qwen-plus"),
     temperature=float(os.getenv("MODEL_TEMPERATURE", 0)),
-    base_url=os.getenv("MODEL_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
-    api_key=os.getenv("MODEL_API_KEY", "sk-eab7577236294b8d9fa96814be63e08f"),
+    base_url=os.getenv("MODEL_BASE_URL"),
+    api_key=os.getenv("MODEL_API_KEY"),
     max_tokens=int(os.getenv("MAX_TOKENS", 4000)),
     streaming=os.getenv("STREAMING", "True").lower() == "true",
 )

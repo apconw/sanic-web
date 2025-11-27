@@ -20,22 +20,22 @@ BRAVE_SEARCH_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY", "").strip()
 web_search = None
 
 # 优先使用 Brave Search(如果配置了 API 密钥)
-# if BRAVE_SEARCH_API_KEY:
-#     brave_search = BraveSearch.from_api_key(
-#         api_key=BRAVE_SEARCH_API_KEY, search_kwargs={"count": 5}  # 返回 5 条搜索结果
-#     )
-#
-#     def web_search_func(query: str):
-#         """使用 Brave Search 执行搜索"""
-#         return brave_search.run(query)
-#
-#     web_search = web_search_func
-#     SEARCH_PROVIDER = "brave"
-#     logging.info("使用 Brave Search 作为搜索引擎")
+if BRAVE_SEARCH_API_KEY:
+    brave_search = BraveSearch.from_api_key(
+        api_key=BRAVE_SEARCH_API_KEY, search_kwargs={"count": 5}  # 返回 5 条搜索结果
+    )
+
+    def web_search_func(query: str):
+        """使用 Brave Search 执行搜索"""
+        return brave_search.run(query)
+
+    web_search = web_search_func
+    SEARCH_PROVIDER = "brave"
+    logging.info("使用 Brave Search 作为搜索引擎")
 
 # 如果没有 Brave Search,则使用 Tavily Search
-# elif TAVILY_API_KEY:
-tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
+elif TAVILY_API_KEY:
+    tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
 
 
 def web_search_func(query: str, max_results: int = 5):
