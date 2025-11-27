@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 import os
-import re
 import traceback
 from typing import Optional
 
@@ -19,6 +18,7 @@ from services.user_service import add_user_record, decode_jwt_token
 logger = logging.getLogger(__name__)
 
 minio_utils = MinioUtils()
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -28,6 +28,7 @@ class DeepAgent:
     """
 
     def __init__(self):
+
         # 初始化LLM
         self.llm = get_llm()
 
@@ -41,13 +42,16 @@ class DeepAgent:
         self.RECURSION_LIMIT = int(os.getenv("RECURSION_LIMIT", 25))
 
         # === 加载核心指令 ===
+        # 从 instructions.md 文件读取系统提示词
         with open(os.path.join(current_dir, "instructions.md"), "r", encoding="utf-8") as f:
             self.CORE_INSTRUCTIONS = f.read()
 
         # === 加载子智能体配置 ===
+        # 从 subagents.json 文件读取各个子智能体的角色定义
         with open(os.path.join(current_dir, "subagents.json"), "r", encoding="utf-8") as f:
             self.subagents_config = json.load(f)
 
+        # 提取三个子智能体的配置
         self.planner = self.subagents_config["planner"]  # 规划师
         self.researcher = self.subagents_config["researcher"]  # 研究员
         self.analyst = self.subagents_config["analyst"]  # 分析师
@@ -57,9 +61,7 @@ class DeepAgent:
 
     @staticmethod
     def _create_response(
-        content: str,
-        message_type: str = "continue",
-        data_type: str = DataTypeEnum.ANSWER.value[0],
+        content: str, message_type: str = "continue", data_type: str = DataTypeEnum.ANSWER.value[0]
     ) -> str:
         """封装响应结构"""
         res = {
@@ -96,11 +98,9 @@ class DeepAgent:
         try:
             t02_answer_data = []
 
+            # 使用用户会话ID作为thread_id，如果未提供则使用默认值
             thread_id = session_id if session_id else "default_thread"
-            config = {
-                "configurable": {"thread_id": thread_id},
-                "recursion_limit": 50,
-            }
+            config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
 
             # 发送开始消息
             start_msg = "🔍 **开始分析问题...**\n\n"
@@ -108,14 +108,17 @@ class DeepAgent:
             t02_answer_data.append(start_msg)
 
             agent = create_deep_agent(
-                tools=self.tools,
-                system_prompt=self.CORE_INSTRUCTIONS,
+                tools=self.tools,  # 可用工具列表
+                system_prompt=self.CORE_INSTRUCTIONS,  # 系统提示词
                 subagents=[self.researcher, self.analyst],
                 model=self.llm,
                 backend=self.checkpointer,
             ).with_config({"recursion_limit": self.RECURSION_LIMIT})
 
+            # 如果有文件内容，则将其添加到查询中
             formatted_query = query
+
+            # 跟踪当前节点和步骤
             current_node = None
             step_count = 0
 
@@ -124,18 +127,16 @@ class DeepAgent:
                 config=config,
                 stream_mode="messages",
             ):
+                print(message_chunk)
                 # 检查是否已取消
                 if self.running_tasks[task_id]["cancelled"]:
                     await response.write(
-                        self._create_response(
-                            "\n> ⚠️ 任务已被用户取消",
-                            "info",
-                            DataTypeEnum.ANSWER.value[0],
-                        )
+                        self._create_response("\n> ⚠️ 任务已被用户取消", "info", DataTypeEnum.ANSWER.value[0])
                     )
                     await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
                     break
 
+                # 获取当前节点信息
                 node_name = metadata.get("langgraph_node", "unknown")
 
                 # 节点切换时输出提示
@@ -143,17 +144,21 @@ class DeepAgent:
                     current_node = node_name
                     step_count += 1
 
-                    thinking_msg = ""
+                    # 根据不同节点输出不同的思考过程提示
                     if node_name == "planner":
-                        thinking_msg = f"<details>\n<summary>📋 步骤 {step_count}: 规划阶段</summary>\n\n"
+                        thinking_msg = f"\n---\n\n### 📋 步骤 {step_count}: 规划阶段\n\n"
+                        await response.write(self._create_response(thinking_msg, "info"))
+                        t02_answer_data.append(thinking_msg)
                     elif node_name == "researcher":
-                        thinking_msg = f"<details>\n<summary>🔎 步骤 {step_count}: 研究阶段</summary>\n\n"
+                        thinking_msg = f"\n---\n\n### 🔎 步骤 {step_count}: 研究阶段\n\n"
+                        await response.write(self._create_response(thinking_msg, "info"))
+                        t02_answer_data.append(thinking_msg)
                     elif node_name == "analyst":
-                        thinking_msg = f"<details>\n<summary>📊 步骤 {step_count}: 分析阶段</summary>\n\n"
+                        thinking_msg = f"\n---\n\n### 📊 步骤 {step_count}: 分析阶段\n\n"
+                        await response.write(self._create_response(thinking_msg, "info"))
+                        t02_answer_data.append(thinking_msg)
                     elif node_name == "tools":
-                        thinking_msg = f"<details>\n<summary>🛠️ 步骤 {step_count}: 工具调用</summary>\n\n"
-
-                    if thinking_msg:
+                        thinking_msg = f"\n---\n\n### 🛠️ 步骤 {step_count}: 工具调用\n\n"
                         await response.write(self._create_response(thinking_msg, "info"))
                         t02_answer_data.append(thinking_msg)
 
@@ -161,54 +166,35 @@ class DeepAgent:
                 if node_name == "tools":
                     tool_name = message_chunk.name or "未知工具"
                     if hasattr(message_chunk, "content") and message_chunk.content:
-                        tool_result = f"<details>\n<summary>✅ 工具 `{tool_name}` 执行完成</summary>\n\n"
+                        # 工具调用结果
+                        tool_result = f"✅ **工具 `{tool_name}` 执行完成**\n\n"
                         await response.write(self._create_response(tool_result, "info"))
                         t02_answer_data.append(tool_result)
 
+                        # 可选：显示工具结果摘要（避免输出过长）
                         try:
-                            content_str = str(message_chunk.content)
-                            img_urls = re.findall(
-                                r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+\.(?:jpg|png|jpeg)",
-                                content_str,
-                            )
-                            for url in img_urls[:3]:
-                                image_markdown = f"[数据来源]({url})\n\n"
-                                await response.write(self._create_response(image_markdown, "info"))
-                                t02_answer_data.append(image_markdown)
-
-                            result_preview = content_str[:500]
-                            if len(content_str) > 500:
+                            result_preview = str(message_chunk.content)[:200]
+                            if len(str(message_chunk.content)) > 200:
                                 result_preview += "..."
-
-                            preview_msg = f"\n{result_preview}\n\n</details>\n\n"
+                            preview_msg = f"```\n{result_preview}\n```\n\n"
                             await response.write(self._create_response(preview_msg, "info"))
                             t02_answer_data.append(preview_msg)
-
-                        except Exception as e:
-                            preview_msg = "</details>\n\n"
-                            await response.write(self._create_response(preview_msg, "info"))
-                            t02_answer_data.append(preview_msg)
+                        except:
+                            pass
                     else:
-                        tool_call = f"<details>\n<summary>🔧 正在调用工具: `{tool_name}`</summary>\n\n"
+                        # 工具调用开始
+                        tool_call = f"🔧 **正在调用工具**: `{tool_name}`\n\n"
                         await response.write(self._create_response(tool_call, "info"))
                         t02_answer_data.append(tool_call)
-
                     continue
 
                 # 输出智能体的思考和回答内容
                 if message_chunk.content:
                     content = message_chunk.content
-                    img_urls = re.findall(
-                        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+\.(?:jpg|png|jpeg)",
-                        content,
-                    )
-                    for url in img_urls[:3]:
-                        image_markdown = f"[数据来源]({url})\n\n"
-                        content += "\n\n" + image_markdown
-
                     t02_answer_data.append(content)
                     await response.write(self._create_response(content))
 
+                    # 确保实时输出
                     if hasattr(response, "flush"):
                         await response.flush()
                     await asyncio.sleep(0)
@@ -219,6 +205,7 @@ class DeepAgent:
                 await response.write(self._create_response(completion_msg, "info"))
                 t02_answer_data.append(completion_msg)
 
+                # 保存记录
                 await add_user_record(
                     uuid_str,
                     session_id,
@@ -236,9 +223,10 @@ class DeepAgent:
         except Exception as e:
             logger.error(f"Agent运行异常: {e}")
             traceback.print_exception(e)
-            error_msg = f"❌ **错误**: 智能体运行异常\n\n\n{str(e)}\n\n"
+            error_msg = f"❌ **错误**: 智能体运行异常\n\n```\n{str(e)}\n```\n"
             await response.write(self._create_response(error_msg, "error", DataTypeEnum.ANSWER.value[0]))
         finally:
+            # 清理任务记录
             if task_id in self.running_tasks:
                 del self.running_tasks[task_id]
 

@@ -40,7 +40,7 @@ elif TAVILY_API_KEY:
 
 def web_search_func(query: str, max_results: int = 5):
     """使用 Tavily Search 执行搜索"""
-    return tavily_client.search(query, max_results=max_results)
+    return tavily_client.search(query, max_results=max_results, include_images=True)
 
 
 web_search = web_search_func
