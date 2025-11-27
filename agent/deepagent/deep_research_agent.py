@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import traceback
 from typing import Optional
 
@@ -18,7 +19,6 @@ from services.user_service import add_user_record, decode_jwt_token
 logger = logging.getLogger(__name__)
 
 minio_utils = MinioUtils()
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -28,7 +28,6 @@ class DeepAgent:
     """
 
     def __init__(self):
-
         # 初始化LLM
         self.llm = get_llm()
 
@@ -42,16 +41,13 @@ class DeepAgent:
         self.RECURSION_LIMIT = int(os.getenv("RECURSION_LIMIT", 25))
 
         # === 加载核心指令 ===
-        # 从 instructions.md 文件读取系统提示词
         with open(os.path.join(current_dir, "instructions.md"), "r", encoding="utf-8") as f:
             self.CORE_INSTRUCTIONS = f.read()
 
         # === 加载子智能体配置 ===
-        # 从 subagents.json 文件读取各个子智能体的角色定义
         with open(os.path.join(current_dir, "subagents.json"), "r", encoding="utf-8") as f:
             self.subagents_config = json.load(f)
 
-        # 提取三个子智能体的配置
         self.planner = self.subagents_config["planner"]  # 规划师
         self.researcher = self.subagents_config["researcher"]  # 研究员
         self.analyst = self.subagents_config["analyst"]  # 分析师
@@ -61,7 +57,9 @@ class DeepAgent:
 
     @staticmethod
     def _create_response(
-        content: str, message_type: str = "continue", data_type: str = DataTypeEnum.ANSWER.value[0]
+        content: str,
+        message_type: str = "continue",
+        data_type: str = DataTypeEnum.ANSWER.value[0],
     ) -> str:
         """封装响应结构"""
         res = {
@@ -80,13 +78,13 @@ class DeepAgent:
         file_list: dict = None,
     ):
         """
-        运行智能体，支持多轮对话记忆
+        运行智能体，支持多轮对话记忆和实时思考过程输出
         :param query: 用户输入
         :param response: 响应对象
         :param session_id: 会话ID，用于区分同一轮对话
         :param uuid_str: 自定义ID，用于唯一标识一次问答
         :param file_list: 附件
-        :param user_token:
+        :param user_token: 用户令牌
         :return:
         """
         # 获取用户信息 标识对话状态
@@ -98,56 +96,129 @@ class DeepAgent:
         try:
             t02_answer_data = []
 
-            # 使用用户会话ID作为thread_id，如果未提供则使用默认值
             thread_id = session_id if session_id else "default_thread"
-            config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
+            config = {
+                "configurable": {"thread_id": thread_id},
+                "recursion_limit": 50,
+            }
+
+            # 发送开始消息
+            start_msg = "🔍 **开始分析问题...**\n\n"
+            await response.write(self._create_response(start_msg, "info"))
+            t02_answer_data.append(start_msg)
 
             agent = create_deep_agent(
-                tools=self.tools,  # 可用工具列表
-                system_prompt=self.CORE_INSTRUCTIONS,  # 系统提示词
+                tools=self.tools,
+                system_prompt=self.CORE_INSTRUCTIONS,
                 subagents=[self.researcher, self.analyst],
                 model=self.llm,
                 backend=self.checkpointer,
             ).with_config({"recursion_limit": self.RECURSION_LIMIT})
 
-            # 如果有文件内容，则将其添加到查询中
             formatted_query = query
+            current_node = None
+            step_count = 0
+
             async for message_chunk, metadata in agent.astream(
                 input={"messages": [HumanMessage(content=formatted_query)]},
                 config=config,
                 stream_mode="messages",
             ):
-                print(message_chunk)
                 # 检查是否已取消
                 if self.running_tasks[task_id]["cancelled"]:
                     await response.write(
-                        self._create_response("\n> 这条消息已停止", "info", DataTypeEnum.ANSWER.value[0])
+                        self._create_response(
+                            "\n> ⚠️ 任务已被用户取消",
+                            "info",
+                            DataTypeEnum.ANSWER.value[0],
+                        )
                     )
-                    # 发送最终停止确认消息
                     await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
                     break
 
-                # 工具输出
-                if metadata["langgraph_node"] == "tools":
+                node_name = metadata.get("langgraph_node", "unknown")
+
+                # 节点切换时输出提示
+                if node_name != current_node and node_name != "unknown":
+                    current_node = node_name
+                    step_count += 1
+
+                    thinking_msg = ""
+                    if node_name == "planner":
+                        thinking_msg = f"<details>\n<summary>📋 步骤 {step_count}: 规划阶段</summary>\n\n"
+                    elif node_name == "researcher":
+                        thinking_msg = f"<details>\n<summary>🔎 步骤 {step_count}: 研究阶段</summary>\n\n"
+                    elif node_name == "analyst":
+                        thinking_msg = f"<details>\n<summary>📊 步骤 {step_count}: 分析阶段</summary>\n\n"
+                    elif node_name == "tools":
+                        thinking_msg = f"<details>\n<summary>🛠️ 步骤 {step_count}: 工具调用</summary>\n\n"
+
+                    if thinking_msg:
+                        await response.write(self._create_response(thinking_msg, "info"))
+                        t02_answer_data.append(thinking_msg)
+
+                # 工具调用输出
+                if node_name == "tools":
                     tool_name = message_chunk.name or "未知工具"
-                    # logger.info(f"工具调用结果:{message_chunk.content}")
-                    tool_use = "> 调用工具:" + tool_name + "\n\n"
-                    await response.write(self._create_response(tool_use))
-                    t02_answer_data.append(tool_use)
+                    if hasattr(message_chunk, "content") and message_chunk.content:
+                        tool_result = f"<details>\n<summary>✅ 工具 `{tool_name}` 执行完成</summary>\n\n"
+                        await response.write(self._create_response(tool_result, "info"))
+                        t02_answer_data.append(tool_result)
+
+                        try:
+                            content_str = str(message_chunk.content)
+                            img_urls = re.findall(
+                                r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+\.(?:jpg|png|jpeg)",
+                                content_str,
+                            )
+                            for url in img_urls[:3]:
+                                image_markdown = f"[数据来源]({url})\n\n"
+                                await response.write(self._create_response(image_markdown, "info"))
+                                t02_answer_data.append(image_markdown)
+
+                            result_preview = content_str[:500]
+                            if len(content_str) > 500:
+                                result_preview += "..."
+
+                            preview_msg = f"\n{result_preview}\n\n</details>\n\n"
+                            await response.write(self._create_response(preview_msg, "info"))
+                            t02_answer_data.append(preview_msg)
+
+                        except Exception as e:
+                            preview_msg = "</details>\n\n"
+                            await response.write(self._create_response(preview_msg, "info"))
+                            t02_answer_data.append(preview_msg)
+                    else:
+                        tool_call = f"<details>\n<summary>🔧 正在调用工具: `{tool_name}`</summary>\n\n"
+                        await response.write(self._create_response(tool_call, "info"))
+                        t02_answer_data.append(tool_call)
+
                     continue
 
-                # 输出最终结果
+                # 输出智能体的思考和回答内容
                 if message_chunk.content:
                     content = message_chunk.content
+                    img_urls = re.findall(
+                        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+\.(?:jpg|png|jpeg)",
+                        content,
+                    )
+                    for url in img_urls[:3]:
+                        image_markdown = f"[数据来源]({url})\n\n"
+                        content += "\n\n" + image_markdown
+
                     t02_answer_data.append(content)
                     await response.write(self._create_response(content))
-                    # 确保实时输出
+
                     if hasattr(response, "flush"):
                         await response.flush()
                     await asyncio.sleep(0)
 
-            # 只有在未取消的情况下才保存记录
+            # 发送完成消息
             if not self.running_tasks[task_id]["cancelled"]:
+                completion_msg = "\n\n---\n\n✨ **报告生成完成！**\n"
+                await response.write(self._create_response(completion_msg, "info"))
+                t02_answer_data.append(completion_msg)
+
                 await add_user_record(
                     uuid_str,
                     session_id,
@@ -160,16 +231,14 @@ class DeepAgent:
                 )
 
         except asyncio.CancelledError:
-            await response.write(self._create_response("\n> 这条消息已停止", "info", DataTypeEnum.ANSWER.value[0]))
+            await response.write(self._create_response("\n> ⚠️ 任务已被取消", "info", DataTypeEnum.ANSWER.value[0]))
             await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
         except Exception as e:
-            print(f"[ERROR] Agent运行异常: {e}")
+            logger.error(f"Agent运行异常: {e}")
             traceback.print_exception(e)
-            await response.write(
-                self._create_response("[ERROR] 智能体运行异常:", "error", DataTypeEnum.ANSWER.value[0])
-            )
+            error_msg = f"❌ **错误**: 智能体运行异常\n\n\n{str(e)}\n\n"
+            await response.write(self._create_response(error_msg, "error", DataTypeEnum.ANSWER.value[0]))
         finally:
-            # 清理任务记录
             if task_id in self.running_tasks:
                 del self.running_tasks[task_id]
 
