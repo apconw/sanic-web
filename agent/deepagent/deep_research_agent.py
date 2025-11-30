@@ -2,7 +2,9 @@ import asyncio
 import json
 import logging
 import os
+import re
 import traceback
+import ast
 from typing import Optional
 
 from deepagents import create_deep_agent
@@ -52,7 +54,7 @@ class DeepAgent:
             self.subagents_config = json.load(f)
 
         # 提取三个子智能体的配置
-        self.planner = self.subagents_config["planner"]  # 规划师
+        # self.planner = self.subagents_config["planner"]  # 规划师 使用默认的
         self.researcher = self.subagents_config["researcher"]  # 研究员
         self.analyst = self.subagents_config["analyst"]  # 分析师
 
@@ -117,16 +119,12 @@ class DeepAgent:
 
             # 如果有文件内容，则将其添加到查询中
             formatted_query = query
-
-            # 跟踪当前节点和步骤
-            current_node = None
-            step_count = 0
-
             async for message_chunk, metadata in agent.astream(
                 input={"messages": [HumanMessage(content=formatted_query)]},
                 config=config,
                 stream_mode="messages",
             ):
+                print(metadata)
                 print(message_chunk)
                 # 检查是否已取消
                 if self.running_tasks[task_id]["cancelled"]:
@@ -139,53 +137,27 @@ class DeepAgent:
                 # 获取当前节点信息
                 node_name = metadata.get("langgraph_node", "unknown")
 
-                # 节点切换时输出提示
-                if node_name != current_node and node_name != "unknown":
-                    current_node = node_name
-                    step_count += 1
-
-                    # 根据不同节点输出不同的思考过程提示
-                    if node_name == "planner":
-                        thinking_msg = f"\n---\n\n### 📋 步骤 {step_count}: 规划阶段\n\n"
-                        await response.write(self._create_response(thinking_msg, "info"))
-                        t02_answer_data.append(thinking_msg)
-                    elif node_name == "researcher":
-                        thinking_msg = f"\n---\n\n### 🔎 步骤 {step_count}: 研究阶段\n\n"
-                        await response.write(self._create_response(thinking_msg, "info"))
-                        t02_answer_data.append(thinking_msg)
-                    elif node_name == "analyst":
-                        thinking_msg = f"\n---\n\n### 📊 步骤 {step_count}: 分析阶段\n\n"
-                        await response.write(self._create_response(thinking_msg, "info"))
-                        t02_answer_data.append(thinking_msg)
-                    elif node_name == "tools":
-                        thinking_msg = f"\n---\n\n### 🛠️ 步骤 {step_count}: 工具调用\n\n"
-                        await response.write(self._create_response(thinking_msg, "info"))
-                        t02_answer_data.append(thinking_msg)
-
                 # 工具调用输出
                 if node_name == "tools":
                     tool_name = message_chunk.name or "未知工具"
-                    if hasattr(message_chunk, "content") and message_chunk.content:
-                        # 工具调用结果
-                        tool_result = f"✅ **工具 `{tool_name}` 执行完成**\n\n"
-                        await response.write(self._create_response(tool_result, "info"))
-                        t02_answer_data.append(tool_result)
 
-                        # 可选：显示工具结果摘要（避免输出过长）
-                        try:
-                            result_preview = str(message_chunk.content)[:200]
-                            if len(str(message_chunk.content)) > 200:
-                                result_preview += "..."
-                            preview_msg = f"```\n{result_preview}\n```\n\n"
-                            await response.write(self._create_response(preview_msg, "info"))
-                            t02_answer_data.append(preview_msg)
-                        except:
-                            pass
-                    else:
-                        # 工具调用开始
-                        tool_call = f"🔧 **正在调用工具**: `{tool_name}`\n\n"
-                        await response.write(self._create_response(tool_call, "info"))
-                        t02_answer_data.append(tool_call)
+                    if tool_name == "write_todos":
+                        plan_markdown_list = self.extract_content_as_markdown_list(message_chunk.content)
+                        think_html = f"""<details style="color:gray;background-color: #f8f8f8;padding: 2px;border-radius: 
+                                          6px;margin-top:5px;" open>
+                                                <summary>{formatted_query}-任务规划如下:\n</summary>"""
+                        think_html += f"""{plan_markdown_list}"""
+                        await response.write(self._create_response(think_html, "info"))
+                        t02_answer_data.append(think_html)
+
+                    if tool_name == "search_web":
+                        search_content = message_chunk.content
+                        content_json = json.loads(search_content)
+                        think_html = f"""搜索{content_json["query"]}已完成"""
+                        think_html += """</details>"""
+                        await response.write(self._create_response(think_html, "info"))
+                        t02_answer_data.append(think_html)
+
                     continue
 
                 # 输出智能体的思考和回答内容
@@ -229,6 +201,35 @@ class DeepAgent:
             # 清理任务记录
             if task_id in self.running_tasks:
                 del self.running_tasks[task_id]
+
+    @staticmethod
+    def extract_content_as_markdown_list(text: str) -> Optional[str]:
+        """
+        安全地从类 JSON 字符串中提取 content 字段，生成纯 Markdown 列表。
+        使用 JSON 解析（而非 ast.literal_eval），更符合安全规范。
+        """
+        # 1. 提取 [...] 区域
+        match = re.search(r"\[.*\]", text, re.DOTALL)
+        if not match:
+            return None
+        raw_list_str = match.group(0).strip()
+        try:
+            json_str = raw_list_str.replace("'", '"').replace('""', '"')
+
+            todo_list = json.loads(json_str)
+
+        except (json.JSONDecodeError, ValueError):
+            return None
+
+        if not isinstance(todo_list, list):
+            return None
+
+        lines = []
+        for index, item in enumerate(todo_list, 1):  # 从1开始编号
+            if isinstance(item, dict) and isinstance(item.get("content"), str):
+                lines.append(f" {index}. {item['content']}")  # 在编号前添加空格
+
+        return "\n\n".join(lines)
 
     async def cancel_task(self, task_id: str) -> bool:
         """

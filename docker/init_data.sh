@@ -13,4 +13,4 @@ fi
 python3 ../common/initialize_mysql.py
 
 # 调用 Python 脚本 初始化表关系
-python3 ../common/initialize_eno4j.py
+python3 ../common/initialize_neo4j.py
