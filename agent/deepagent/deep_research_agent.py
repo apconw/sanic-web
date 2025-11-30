@@ -54,7 +54,7 @@ class DeepAgent:
             self.subagents_config = json.load(f)
 
         # 提取三个子智能体的配置
-        # self.planner = self.subagents_config["planner"]  # 规划师 使用默认的
+        self.planner = self.subagents_config["planner"]  # 规划师 使用默认的
         self.researcher = self.subagents_config["researcher"]  # 研究员
         self.analyst = self.subagents_config["analyst"]  # 分析师
 
@@ -112,20 +112,21 @@ class DeepAgent:
             agent = create_deep_agent(
                 tools=self.tools,  # 可用工具列表
                 system_prompt=self.CORE_INSTRUCTIONS,  # 系统提示词
-                subagents=[self.researcher, self.analyst],
+                subagents=[self.planner, self.researcher, self.analyst],
                 model=self.llm,
                 backend=self.checkpointer,
             ).with_config({"recursion_limit": self.RECURSION_LIMIT})
 
             # 如果有文件内容，则将其添加到查询中
             formatted_query = query
+            plan_task_mesage = False
             async for message_chunk, metadata in agent.astream(
                 input={"messages": [HumanMessage(content=formatted_query)]},
                 config=config,
                 stream_mode="messages",
             ):
-                print(metadata)
-                print(message_chunk)
+                # print(metadata)
+                # print(message_chunk)
                 # 检查是否已取消
                 if self.running_tasks[task_id]["cancelled"]:
                     await response.write(
@@ -142,19 +143,23 @@ class DeepAgent:
                     tool_name = message_chunk.name or "未知工具"
 
                     if tool_name == "write_todos":
-                        plan_markdown_list = self.extract_content_as_markdown_list(message_chunk.content)
-                        think_html = f"""<details style="color:gray;background-color: #f8f8f8;padding: 2px;border-radius: 
-                                          6px;margin-top:5px;" open>
-                                                <summary>{formatted_query}-任务规划如下:\n</summary>"""
-                        think_html += f"""{plan_markdown_list}"""
-                        await response.write(self._create_response(think_html, "info"))
-                        t02_answer_data.append(think_html)
+                        if not plan_task_mesage:
+                            plan_markdown_str, plan_markdown_list = self.extract_content_as_markdown_list(
+                                message_chunk.content
+                            )
+                            think_html = f"""<details style="color:gray;background-color: #f8f8f8;padding: 2px;border-radius: 
+                                              6px;margin-top:5px;">
+                                                    <summary>{formatted_query}-任务规划如下:\n</summary>"""
+                            think_html += f"""{plan_markdown_str}"""
+                            think_html += """</details>\n\n"""
+                            await response.write(self._create_response(think_html, "info"))
+                            t02_answer_data.append(think_html)
+                            plan_task_mesage = True
 
                     if tool_name == "search_web":
                         search_content = message_chunk.content
                         content_json = json.loads(search_content)
-                        think_html = f"""搜索{content_json["query"]}已完成"""
-                        think_html += """</details>"""
+                        think_html = f"""\n > ✅ 搜索{content_json["query"]}\n\n"""
                         await response.write(self._create_response(think_html, "info"))
                         t02_answer_data.append(think_html)
 
@@ -203,7 +208,7 @@ class DeepAgent:
                 del self.running_tasks[task_id]
 
     @staticmethod
-    def extract_content_as_markdown_list(text: str) -> Optional[str]:
+    def extract_content_as_markdown_list(text: str) -> tuple[Optional[str], list]:
         """
         安全地从类 JSON 字符串中提取 content 字段，生成纯 Markdown 列表。
         使用 JSON 解析（而非 ast.literal_eval），更符合安全规范。
@@ -227,9 +232,12 @@ class DeepAgent:
         lines = []
         for index, item in enumerate(todo_list, 1):  # 从1开始编号
             if isinstance(item, dict) and isinstance(item.get("content"), str):
-                lines.append(f" {index}. {item['content']}")  # 在编号前添加空格
+                if index == 1:
+                    lines.append(f"  {index}. {item['content']}")  # 在编号前添加空格
+                else:
+                    lines.append(f" {index}. {item['content']}")  # 在编号前添加空格
 
-        return "\n\n".join(lines)
+        return "\n\n".join(lines), lines
 
     async def cancel_task(self, task_id: str) -> bool:
         """
