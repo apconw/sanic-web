@@ -16,6 +16,8 @@ from common.llm_util import get_llm
 from common.minio_util import MinioUtils
 from constants.code_enum import DataTypeEnum, DiFyAppEnum
 from services.user_service import add_user_record, decode_jwt_token
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,9 @@ class DeepAgent:
 
         # 全局checkpointer用于持久化所有用户的对话状态
         self.checkpointer = InMemorySaver()
+
+        # 是否启用链路追踪
+        self.ENABLE_TRACING = os.getenv("LANGFUSE_TRACING_ENABLED", "true").lower() == "true"
 
         # 存储运行中的任务
         self.running_tasks = {}
@@ -104,6 +109,13 @@ class DeepAgent:
             thread_id = session_id if session_id else "default_thread"
             config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
 
+            # 准备 tracing 配置
+            if self.ENABLE_TRACING:
+                langfuse_handler = CallbackHandler()
+                callbacks = [langfuse_handler]
+                config["callbacks"] = callbacks
+                config["metadata"] = {"langfuse_session_id": session_id}
+
             # 发送开始消息
             start_msg = "🔍 **开始分析问题...**\n\n"
             await response.write(self._create_response(start_msg, "info"))
@@ -119,79 +131,49 @@ class DeepAgent:
 
             # 如果有文件内容，则将其添加到查询中
             formatted_query = query
-            plan_task_mesage = False
-            async for message_chunk, metadata in agent.astream(
-                input={"messages": [HumanMessage(content=formatted_query)]},
-                config=config,
-                stream_mode="messages",
-            ):
-                # print(metadata)
-                # print(message_chunk)
-                # 检查是否已取消
-                if self.running_tasks[task_id]["cancelled"]:
-                    await response.write(
-                        self._create_response("\n> ⚠️ 任务已被用户取消", "info", DataTypeEnum.ANSWER.value[0])
+
+            # 准备流式处理参数
+            stream_args = {
+                "input": {"messages": [HumanMessage(content=formatted_query)]},
+                "config": config,
+                "stream_mode": "messages",
+            }
+
+            # 如果启用 tracing，包裹在 trace 上下文中
+            if self.ENABLE_TRACING:
+                langfuse = get_client()
+                with langfuse.start_as_current_observation(
+                    input=query,
+                    as_type="agent",
+                    name="深度搜索",
+                ) as rootspan:
+                    user_info = await decode_jwt_token(user_token)
+                    user_id = user_info.get("id")
+                    rootspan.update_trace(session_id=session_id, user_id=user_id)
+                    await self._stream_agent_response(
+                        agent,
+                        stream_args,
+                        response,
+                        task_id,
+                        t02_answer_data,
+                        uuid_str,
+                        session_id,
+                        query,
+                        file_list,
+                        user_token,
                     )
-                    await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
-                    break
-
-                # 获取当前节点信息
-                node_name = metadata.get("langgraph_node", "unknown")
-
-                # 工具调用输出
-                if node_name == "tools":
-                    tool_name = message_chunk.name or "未知工具"
-
-                    if tool_name == "write_todos":
-                        if not plan_task_mesage:
-                            plan_markdown_str, plan_markdown_list = self.extract_content_as_markdown_list(
-                                message_chunk.content
-                            )
-                            think_html = f"""<details style="color:gray;background-color: #f8f8f8;padding: 2px;border-radius: 
-                                              6px;margin-top:5px;">
-                                                    <summary>{formatted_query}-任务规划如下:\n</summary>"""
-                            think_html += f"""{plan_markdown_str}"""
-                            think_html += """</details>\n\n"""
-                            await response.write(self._create_response(think_html, "info"))
-                            t02_answer_data.append(think_html)
-                            plan_task_mesage = True
-
-                    if tool_name == "search_web":
-                        search_content = message_chunk.content
-                        content_json = json.loads(search_content)
-                        think_html = f"""\n > ✅ 搜索{content_json["query"]}\n\n"""
-                        await response.write(self._create_response(think_html, "info"))
-                        t02_answer_data.append(think_html)
-
-                    continue
-
-                # 输出智能体的思考和回答内容
-                if message_chunk.content:
-                    content = message_chunk.content
-                    t02_answer_data.append(content)
-                    await response.write(self._create_response(content))
-
-                    # 确保实时输出
-                    if hasattr(response, "flush"):
-                        await response.flush()
-                    await asyncio.sleep(0)
-
-            # 发送完成消息
-            if not self.running_tasks[task_id]["cancelled"]:
-                completion_msg = "\n\n---\n\n✨ **报告生成完成！**\n"
-                await response.write(self._create_response(completion_msg, "info"))
-                t02_answer_data.append(completion_msg)
-
-                # 保存记录
-                await add_user_record(
+            else:
+                await self._stream_agent_response(
+                    agent,
+                    stream_args,
+                    response,
+                    task_id,
+                    t02_answer_data,
                     uuid_str,
                     session_id,
                     query,
-                    t02_answer_data,
-                    {},
-                    DiFyAppEnum.REPORT_QA.value[0],
-                    user_token,
                     file_list,
+                    user_token,
                 )
 
         except asyncio.CancelledError:
@@ -206,6 +188,81 @@ class DeepAgent:
             # 清理任务记录
             if task_id in self.running_tasks:
                 del self.running_tasks[task_id]
+
+    async def _stream_agent_response(
+        self, agent, stream_args, response, task_id, t02_answer_data, uuid_str, session_id, query, file_list, user_token
+    ):
+        """处理agent流式响应的核心逻辑"""
+        plan_task_mesage = False
+        async for message_chunk, metadata in agent.astream(**stream_args):
+            # print(metadata)
+            # print(message_chunk)
+            # 检查是否已取消
+            if self.running_tasks[task_id]["cancelled"]:
+                await response.write(
+                    self._create_response("\n> ⚠️ 任务已被用户取消", "info", DataTypeEnum.ANSWER.value[0])
+                )
+                await response.write(self._create_response("", "end", DataTypeEnum.STREAM_END.value[0]))
+                break
+
+            # 获取当前节点信息
+            node_name = metadata.get("langgraph_node", "unknown")
+
+            # 工具调用输出
+            if node_name == "tools":
+                tool_name = message_chunk.name or "未知工具"
+
+                if tool_name == "write_todos":
+                    if not plan_task_mesage:
+                        plan_markdown_str, plan_markdown_list = self.extract_content_as_markdown_list(
+                            message_chunk.content
+                        )
+                        think_html = f"""<details style="color:gray;background-color: #f8f8f8;padding: 2px;border-radius: 
+                                          6px;margin-top:5px;">
+                                                <summary>{query}-任务规划如下:\n</summary>"""
+                        think_html += f"""{plan_markdown_str}"""
+                        think_html += """</details>\n\n"""
+                        await response.write(self._create_response(think_html, "info"))
+                        t02_answer_data.append(think_html)
+                        plan_task_mesage = True
+
+                if tool_name == "search_web":
+                    search_content = message_chunk.content
+                    content_json = json.loads(search_content)
+                    think_html = f"""\n > ✅ 搜索{content_json["query"]}\n\n"""
+                    await response.write(self._create_response(think_html, "info"))
+                    t02_answer_data.append(think_html)
+
+                continue
+
+            # 输出智能体的思考和回答内容
+            if message_chunk.content:
+                content = message_chunk.content
+                t02_answer_data.append(content)
+                await response.write(self._create_response(content))
+
+                # 确保实时输出
+                if hasattr(response, "flush"):
+                    await response.flush()
+                await asyncio.sleep(0)
+
+        # 发送完成消息
+        if not self.running_tasks[task_id]["cancelled"]:
+            completion_msg = "\n\n---\n\n✨ **报告生成完成！**\n"
+            await response.write(self._create_response(completion_msg, "info"))
+            t02_answer_data.append(completion_msg)
+
+            # 保存记录
+            await add_user_record(
+                uuid_str,
+                session_id,
+                query,
+                t02_answer_data,
+                {},
+                DiFyAppEnum.REPORT_QA.value[0],
+                user_token,
+                file_list,
+            )
 
     @staticmethod
     def extract_content_as_markdown_list(text: str) -> tuple[Optional[str], list]:
