@@ -36,3 +36,4 @@ CLAUDE.md
 .spec-workflow/
 test/
 examples/
+.langgraph_api/
