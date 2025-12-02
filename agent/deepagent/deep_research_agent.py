@@ -124,7 +124,7 @@ class DeepAgent:
             agent = create_deep_agent(
                 tools=self.tools,  # 可用工具列表
                 system_prompt=self.CORE_INSTRUCTIONS,  # 系统提示词
-                subagents=[self.planner, self.researcher, self.analyst],
+                subagents=[self.researcher, self.analyst],
                 model=self.llm,
                 backend=self.checkpointer,
             ).with_config({"recursion_limit": self.RECURSION_LIMIT})
