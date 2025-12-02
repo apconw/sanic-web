@@ -70,6 +70,8 @@ cd docker
 ![image](images/mcp-hub-02.png)
 
 ##### 工具
+- **deploy.sh脚本已经初始化好了下面两个工具不用手动配置了!**
+ - 只需要关注下面mcp-server-chart工具的VIS_REQUEST_SERVER环境变量值
 > 需要安装两个工具mcp-server-chart蚂蚁图表工具/12306火车票查询工具
 
 - **mcp-server-chart**

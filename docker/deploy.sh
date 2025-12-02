@@ -24,9 +24,110 @@ if ! mkdir -p ./volume/mcp-data; then
     log_error "无法创建目录 ./volume/mcp-data"
 fi
 
-if ! touch ./volume/mcp-data/mcp_settings.json; then
+# 创建mcp_settings.json并写入JSON内容
+if ! cat > ./volume/mcp-data/mcp_settings.json << 'EOF'
+{
+  "mcpServers": {
+    "12306": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "12306-mcp"
+      ],
+      "owner": "admin"
+    },
+    "mcp-server-chart": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@antv/mcp-server-chart"
+      ],
+      "env": {
+        "VIS_REQUEST_SERVER": "http://gpt-vis-api:3000/generate"
+      },
+      "owner": "admin"
+    }
+  },
+  "users": [
+    {
+      "username": "admin",
+      "password": "$2b$10$dZBmE4IAFBy1fOFUJ9itZekn1eX3WzS1i1thI.gl9LBh9tukmtk1W",
+      "isAdmin": true
+    }
+  ],
+  "groups": [
+    {
+      "id": "d7af20c7-1b08-4963-82b6-41affc54a20d",
+      "name": "common-qa",
+      "description": "",
+      "servers": [
+        {
+          "name": "12306",
+          "tools": "all"
+        },
+        {
+          "name": "amap",
+          "tools": "all"
+        },
+        {
+          "name": "mcp-server-firecrawl",
+          "tools": "all"
+        },
+        {
+          "name": "mcp-server-chart",
+          "tools": "all"
+        }
+      ],
+      "owner": "admin"
+    },
+    {
+      "id": "71a21b11-d684-462d-9005-79bc62934d88",
+      "name": "database-qa",
+      "description": "",
+      "servers": [
+        {
+          "name": "mcp-server-chart",
+          "tools": "all"
+        }
+      ],
+      "owner": "admin"
+    }
+  ],
+  "systemConfig": {
+    "routing": {
+      "enableGlobalRoute": true,
+      "enableGroupNameRoute": true,
+      "enableBearerAuth": false,
+      "bearerAuthKey": "TnGDRZ4bHlnOA5mKqoG5CSonSepsI798",
+      "skipAuth": false
+    },
+    "install": {
+      "pythonIndexUrl": "https://mirrors.aliyun.com/pypi/simple",
+      "npmRegistry": "https://registry.npmmirror.com",
+      "baseUrl": "http://localhost:3300"
+    },
+    "smartRouting": {
+      "enabled": false,
+      "dbUrl": "",
+      "openaiApiBaseUrl": "",
+      "openaiApiKey": "",
+      "openaiApiEmbeddingModel": ""
+    },
+    "mcpRouter": {
+      "apiKey": "",
+      "referer": "https://mcphub.app",
+      "title": "MCPHub",
+      "baseUrl": "https://api.mcprouter.to/v1"
+    }
+  }
+}
+EOF
+then
     log_error "无法创建文件 ./volume/mcp-data/mcp_settings.json"
 fi
+
 
 # 2. 启动所有服务
 log_info "🐳 启动Docker服务..."
@@ -96,7 +197,7 @@ check_mysql_ready() {
     log_info "⏳ 等待 MySQL 服务准备就绪..."
 
     while [ $attempt -le $max_attempts ]; do
-        if docker exec chat-db mysqladmin ping --silent >/dev/null 2>&1; then
+        if docker exec mysql-db mysqladmin ping --silent >/dev/null 2>&1; then
             log_info "✅ MySQL 服务已准备就绪"
             return 0
         fi
@@ -139,7 +240,7 @@ mysql_ready_ok=true
 port_mysql_ok=true
 port_neo4j_ok=true
 
-wait_for_container "chat-db" || container_mysql_ok=false
+wait_for_container "mysql-db" || container_mysql_ok=false
 wait_for_container "neo4j-apoc" || container_neo4j_ok=true
 check_mysql_ready || mysql_ready_ok=false
 check_port_available "MySQL" 13006 || port_mysql_ok=false
