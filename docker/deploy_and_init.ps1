@@ -11,10 +11,10 @@ function Write-Log {
         [string]$Level = "Info"
     )
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logEntry = "$timestamp: $Level - $Message"
+    $logEntry = "${timestamp}: ${Level} - ${Message}"
 
     if ($Level -eq "Error") {
-        Write-Host "❌ 错误: $Message" -ForegroundColor Red
+        Write-Host "错误: $Message" -ForegroundColor Red
         $logEntry | Out-File -FilePath $ErrorLog -Append -Encoding UTF8
     } else {
         Write-Host $Message
@@ -22,11 +22,11 @@ function Write-Log {
     }
 }
 
-Write-Log "🚀 开始部署和初始化流程..."
+Write-Log "开始部署和初始化流程..."
 
 # === 第1~5步：创建配置、启动Docker、检查环境等（与之前一致）===
 
-Write-Log "📁 创建volume目录和配置文件..."
+Write-Log "创建volume目录和配置文件..."
 $VolumePath = "volume\mcp-data"
 if (!(Test-Path $VolumePath)) {
     try {
@@ -44,7 +44,6 @@ $JsonContent = @'
       "type": "stdio",
       "command": "npx",
       "args": [
-        "-y",
         "12306-mcp"
       ],
       "owner": "admin"
@@ -53,7 +52,6 @@ $JsonContent = @'
       "type": "stdio",
       "command": "npx",
       "args": [
-        "-y",
         "@antv/mcp-server-chart"
       ],
       "env": {
@@ -143,13 +141,13 @@ try {
     Write-Log "无法创建文件 $ConfigFile" -Level Error
 }
 
-Write-Log "🐳 启动Docker服务..."
+Write-Log "启动Docker服务..."
 & docker-compose up -d
 if ($LASTEXITCODE -ne 0) {
     Write-Log "Docker服务启动失败" -Level Error
 }
 
-Write-Log "🔍 检查Python环境..."
+Write-Log "检查Python环境..."
 $HasPython = $null -ne (Get-Command python -ErrorAction SilentlyContinue)
 $HasPip = $null -ne (Get-Command pip -ErrorAction SilentlyContinue)
 
@@ -165,11 +163,11 @@ if (-not $HasPip) {
 
 if ($HasPython) {
     $pyVer = & python --version 2>&1
-    Write-Log "✅ Python环境检查通过 (版本: $pyVer)"
+    Write-Log "Python环境检查通过 (版本: $pyVer)"
 }
 
 if ($HasPip) {
-    Write-Log "🐍 安装Python依赖..."
+    Write-Log "安装Python依赖..."
     & pip install pymysql py2neo
     if ($LASTEXITCODE -ne 0) {
         Write-Log "Python依赖安装失败" -Level Error
@@ -178,15 +176,15 @@ if ($HasPip) {
 
 function Wait-Container {
     param([string]$Name, [int]$MaxAttempts = 30)
-    Write-Log "⏳ 等待容器 $Name 启动..."
+    Write-Log "等待容器 $Name 启动..."
     $attempt = 1
     while ($attempt -le $MaxAttempts) {
         $state = docker inspect -f "{{.State.Running}}" $Name 2>$null
         if ($state -eq "true") {
-            Write-Log "✅ 容器 $Name 已成功启动"
+            Write-Log "容器 $Name 已成功启动"
             return $true
         }
-        Write-Log "⏳ 容器 $Name 尚未启动，第 $attempt/$MaxAttempts 次尝试..."
+        Write-Log "容器 $Name 尚未启动，第 $attempt/$MaxAttempts 次尝试..."
         Start-Sleep -Seconds 10
         $attempt++
     }
@@ -196,15 +194,15 @@ function Wait-Container {
 
 function Test-MySqlReady {
     param([int]$MaxAttempts = 30)
-    Write-Log "⏳ 等待 MySQL 服务准备就绪..."
+    Write-Log "等待 MySQL 服务准备就绪..."
     $attempt = 1
     while ($attempt -le $MaxAttempts) {
         $result = docker exec mysql-db mysqladmin ping --silent 2>$null
         if ($LASTEXITCODE -eq 0) {
-            Write-Log "✅ MySQL 服务已准备就绪"
+            Write-Log "MySQL 服务已准备就绪"
             return $true
         }
-        Write-Log "⏳ MySQL 尚未准备就绪，第 $attempt/$MaxAttempts 次尝试..."
+        Write-Log "MySQL 尚未准备就绪，第 $attempt/$MaxAttempts 次尝试..."
         Start-Sleep -Seconds 5
         $attempt++
     }
@@ -214,15 +212,15 @@ function Test-MySqlReady {
 
 function Test-PortOpen {
     param([string]$Service, [int]$Port, [int]$MaxAttempts = 30)
-    Write-Log "⏳ 检查 $Service 端口 $Port 是否可用..."
+    Write-Log "检查 $Service 端口 $Port 是否可用..."
     $attempt = 1
     while ($attempt -le $MaxAttempts) {
         $conn = Test-NetConnection -ComputerName localhost -Port $Port -WarningAction SilentlyContinue
         if ($conn.TcpTestSucceeded) {
-            Write-Log "✅ $Service 端口 $Port 已开放"
+            Write-Log "$Service 端口 $Port 已开放"
             return $true
         }
-        Write-Log "⏳ $Service 端口 $Port 尚未开放，第 $attempt/$MaxAttempts 次尝试..."
+        Write-Log "$Service 端口 $Port 尚未开放，第 $attempt/$MaxAttempts 次尝试..."
         Start-Sleep -Seconds 5
         $attempt++
     }
@@ -239,7 +237,7 @@ $port_neo4j_ok = Test-PortOpen "Neo4j" 7687
 # === 内嵌 init_data.sh 的逻辑（不再调用外部脚本）===
 
 if ($container_mysql_ok -and $container_neo4j_ok -and $mysql_ready_ok -and $port_mysql_ok -and $port_neo4j_ok) {
-    Write-Log "📊 等待服务稳定 (30秒)..."
+    Write-Log "等待服务稳定 (30秒)..."
     Start-Sleep -Seconds 30
 
     # 检查 SQL 文件是否存在（相对路径）
@@ -252,7 +250,7 @@ if ($container_mysql_ok -and $container_neo4j_ok -and $mysql_ready_ok -and $port
     # 执行 initialize_mysql.py
     $MysqlScript = "..\common\initialize_mysql.py"
     if (Test-Path $MysqlScript) {
-        Write-Log "🔧 执行 MySQL 初始化脚本..."
+        Write-Log "执行 MySQL 初始化脚本..."
         & python $MysqlScript
         if ($LASTEXITCODE -ne 0) {
             Write-Log "MySQL 初始化失败" -Level Error
@@ -266,7 +264,7 @@ if ($container_mysql_ok -and $container_neo4j_ok -and $mysql_ready_ok -and $port
     # 执行 initialize_neo4j.py
     $Neo4jScript = "..\common\initialize_neo4j.py"
     if (Test-Path $Neo4jScript) {
-        Write-Log "🔧 执行 Neo4j 初始化脚本..."
+        Write-Log "执行 Neo4j 初始化脚本..."
         & python $Neo4jScript
         if ($LASTEXITCODE -ne 0) {
             Write-Log "Neo4j 初始化失败" -Level Error
@@ -277,7 +275,7 @@ if ($container_mysql_ok -and $container_neo4j_ok -and $mysql_ready_ok -and $port
         exit 1
     }
 
-    Write-Log "🎉 部署和初始化完成！"
+    Write-Log "部署和初始化完成！"
 } else {
     Write-Log "服务启动失败，无法执行数据初始化" -Level Error
     Write-Log "各服务状态:"

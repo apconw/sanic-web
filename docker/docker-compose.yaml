@@ -88,7 +88,7 @@ services:
       - ./my.cnf:/etc/mysql/conf.d/my.cnf
 
   mcphub:
-    image: samanhappy/mcphub:0.10.3
+    image: samanhappy/mcphub:0.11.0
     container_name: mcphub
     ports:
       - "3300:3000"

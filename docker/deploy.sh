@@ -32,7 +32,6 @@ if ! cat > ./volume/mcp-data/mcp_settings.json << 'EOF'
       "type": "stdio",
       "command": "npx",
       "args": [
-        "-y",
         "12306-mcp"
       ],
       "owner": "admin"
@@ -41,7 +40,6 @@ if ! cat > ./volume/mcp-data/mcp_settings.json << 'EOF'
       "type": "stdio",
       "command": "npx",
       "args": [
-        "-y",
         "@antv/mcp-server-chart"
       ],
       "env": {
