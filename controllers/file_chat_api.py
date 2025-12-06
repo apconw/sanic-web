@@ -7,6 +7,7 @@ from constants.code_enum import SysCodeEnum
 from sanic import Blueprint, Request
 from services.file_chat_service import read_excel, read_file_columns
 from services.text2_sql_service import exe_file_sql_query
+from sanic_ext import openapi
 
 bp = Blueprint("fileChatApi", url_prefix="/file")
 
@@ -14,12 +15,16 @@ minio_utils = MinioUtils()
 
 
 @bp.post("/read_file")
+@openapi.parameter(name="file_qa_str", description="文件地址", required=True)
+@openapi.response(
+    200,
+    content={"application/json": '{"data": 1}'},
+    description="文件内容",
+)
 @async_json_resp
-async def read_file(req: Request):
+async def read_file(req: Request) -> dict:
     """
     读取excel文件第一行内容
-    :param req:
-    :return:
     """
 
     file_key = req.args.get("file_qa_str")

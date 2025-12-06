@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
+    "@types/three": "^0.181.0",
     "@vueuse/core": "^10.10.0",
     "axios": "1.7.2",
     "dompurify": "^3.1.5",
@@ -41,6 +42,7 @@
     "naive-ui": "^2.38.2",
     "nprogress": "^0.2.0",
     "pinia": "^3.0.2",
+    "three": "^0.181.2",
     "uuid": "^9.0.1",
     "vfile": "^6.0.1",
     "vue": "^3.5.13",

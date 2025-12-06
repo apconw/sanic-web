@@ -24,9 +24,108 @@ if ! mkdir -p ./volume/mcp-data; then
     log_error "无法创建目录 ./volume/mcp-data"
 fi
 
-if ! touch ./volume/mcp-data/mcp_settings.json; then
+# 创建mcp_settings.json并写入JSON内容
+if ! cat > ./volume/mcp-data/mcp_settings.json << 'EOF'
+{
+  "mcpServers": {
+    "12306": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "12306-mcp"
+      ],
+      "owner": "admin"
+    },
+    "mcp-server-chart": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@antv/mcp-server-chart"
+      ],
+      "env": {
+        "VIS_REQUEST_SERVER": "http://gpt-vis-api:3000/generate"
+      },
+      "owner": "admin"
+    }
+  },
+  "users": [
+    {
+      "username": "admin",
+      "password": "$2b$10$dZBmE4IAFBy1fOFUJ9itZekn1eX3WzS1i1thI.gl9LBh9tukmtk1W",
+      "isAdmin": true
+    }
+  ],
+  "groups": [
+    {
+      "id": "d7af20c7-1b08-4963-82b6-41affc54a20d",
+      "name": "common-qa",
+      "description": "",
+      "servers": [
+        {
+          "name": "12306",
+          "tools": "all"
+        },
+        {
+          "name": "amap",
+          "tools": "all"
+        },
+        {
+          "name": "mcp-server-firecrawl",
+          "tools": "all"
+        },
+        {
+          "name": "mcp-server-chart",
+          "tools": "all"
+        }
+      ],
+      "owner": "admin"
+    },
+    {
+      "id": "71a21b11-d684-462d-9005-79bc62934d88",
+      "name": "database-qa",
+      "description": "",
+      "servers": [
+        {
+          "name": "mcp-server-chart",
+          "tools": "all"
+        }
+      ],
+      "owner": "admin"
+    }
+  ],
+  "systemConfig": {
+    "routing": {
+      "enableGlobalRoute": true,
+      "enableGroupNameRoute": true,
+      "enableBearerAuth": false,
+      "bearerAuthKey": "TnGDRZ4bHlnOA5mKqoG5CSonSepsI798",
+      "skipAuth": false
+    },
+    "install": {
+      "pythonIndexUrl": "https://mirrors.aliyun.com/pypi/simple",
+      "npmRegistry": "https://registry.npmmirror.com",
+      "baseUrl": "http://localhost:3300"
+    },
+    "smartRouting": {
+      "enabled": false,
+      "dbUrl": "",
+      "openaiApiBaseUrl": "",
+      "openaiApiKey": "",
+      "openaiApiEmbeddingModel": ""
+    },
+    "mcpRouter": {
+      "apiKey": "",
+      "referer": "https://mcphub.app",
+      "title": "MCPHub",
+      "baseUrl": "https://api.mcprouter.to/v1"
+    }
+  }
+}
+EOF
+then
     log_error "无法创建文件 ./volume/mcp-data/mcp_settings.json"
 fi
+
 
 # 2. 启动所有服务
 log_info "🐳 启动Docker服务..."
@@ -96,7 +195,7 @@ check_mysql_ready() {
     log_info "⏳ 等待 MySQL 服务准备就绪..."
 
     while [ $attempt -le $max_attempts ]; do
-        if docker exec chat-db mysqladmin ping --silent >/dev/null 2>&1; then
+        if docker exec mysql-db mysqladmin ping --silent >/dev/null 2>&1; then
             log_info "✅ MySQL 服务已准备就绪"
             return 0
         fi
@@ -106,6 +205,60 @@ check_mysql_ready() {
     done
 
     log_error "MySQL 服务准备超时"
+    return 1
+}
+
+# 检查Neo4j服务是否真正可用（Bolt协议）
+check_neo4j_ready() {
+    local max_attempts=60
+    local attempt=1
+
+    log_info "⏳ 等待 Neo4j Bolt 服务准备就绪..."
+
+    while [ $attempt -le $max_attempts ]; do
+        # 方法1: 尝试使用 cypher-shell 连接（如果容器内有）
+        if docker exec neo4j-apoc cypher-shell -u neo4j -p neo4j123 "RETURN 1;" >/dev/null 2>&1; then
+            log_info "✅ Neo4j Bolt 服务已准备就绪"
+            return 0
+        fi
+        
+        # 方法2: 尝试使用 Python 脚本测试连接（如果 Python 可用）
+        if command -v python3 &> /dev/null; then
+            if python3 -c "
+import socket
+import sys
+try:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(2)
+    result = sock.connect_ex(('localhost', 7687))
+    sock.close()
+    if result == 0:
+        # 端口开放，尝试 Bolt 握手
+        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock2.settimeout(2)
+        sock2.connect(('localhost', 7687))
+        # 发送 Bolt 握手消息
+        handshake = b'\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        sock2.send(handshake)
+        response = sock2.recv(4)
+        sock2.close()
+        if len(response) >= 4:
+            sys.exit(0)
+    sys.exit(1)
+except:
+    sys.exit(1)
+" 2>/dev/null; then
+                log_info "✅ Neo4j Bolt 服务已准备就绪"
+                return 0
+            fi
+        fi
+        
+        log_info "⏳ Neo4j Bolt 服务尚未准备就绪，第 $attempt/$max_attempts 次尝试..."
+        attempt=$((attempt + 1))
+        sleep 5
+    done
+
+    log_error "Neo4j Bolt 服务准备超时"
     return 1
 }
 
@@ -136,19 +289,21 @@ check_port_available() {
 container_mysql_ok=true
 container_neo4j_ok=true
 mysql_ready_ok=true
+neo4j_ready_ok=true
 port_mysql_ok=true
 port_neo4j_ok=true
 
-wait_for_container "chat-db" || container_mysql_ok=false
-wait_for_container "neo4j-apoc" || container_neo4j_ok=true
+wait_for_container "mysql-db" || container_mysql_ok=false
+wait_for_container "neo4j-apoc" || container_neo4j_ok=false
 check_mysql_ready || mysql_ready_ok=false
+check_neo4j_ready || neo4j_ready_ok=false
 check_port_available "MySQL" 13006 || port_mysql_ok=false
 check_port_available "Neo4j" 7687 || port_neo4j_ok=false
 
 # 6. 执行数据初始化脚本
-if $container_mysql_ok && $container_neo4j_ok && $mysql_ready_ok && $port_mysql_ok && $port_neo4j_ok; then
-    log_info "📊 等待服务稳定 (30秒)..."
-    sleep 30  # 等待30秒以确保服务完全就绪
+if $container_mysql_ok && $container_neo4j_ok && $mysql_ready_ok && $neo4j_ready_ok && $port_mysql_ok && $port_neo4j_ok; then
+    log_info "📊 等待服务稳定 (10秒)..."
+    sleep 10  # 服务已就绪，只需短暂等待确保稳定
 
     log_info "📊 执行数据初始化..."
     if [ -f "./init_data.sh" ]; then
@@ -180,6 +335,7 @@ else
     log_info "- MySQL容器启动: $container_mysql_ok"
     log_info "- Neo4j容器启动: $container_neo4j_ok"
     log_info "- MySQL服务就绪: $mysql_ready_ok"
+    log_info "- Neo4j Bolt服务就绪: $neo4j_ready_ok"
     log_info "- MySQL端口可用: $port_mysql_ok"
     log_info "- Neo4j端口可用: $port_neo4j_ok"
 fi

@@ -19,7 +19,24 @@ MINIO_ACCESS_KEY=QfIx8FgdpgKtmbFMbKVb
 MiNIO_SECRET_KEY=DsitWZJT3pecrg020Y2NKCETVpsIc3h2PrKTqONA
 ```
 
-### 1.3. **大模型密钥配置**
+### 1.3. **本地业务库配置(可选)**
+- 数据问答配置成自己的业务库
+```
+# SQLAlchemy
+SQLALCHEMY_DATABASE_URI=mysql+pymysql://root:1@127.0.0.1:13006/chat_db
+```
+- 扫描业务系统表自动配置表关系
+```angular2html
+cd commmon/quick_mapper_to_neo4j.py
+
+# 修改Java Spring Boot 项目路径
+JAVA_PROJECT_PATH = "/Users/lihuan/java-projects/microbrain-passcloud"
+
+# 运行
+python quick_mapper_to_neo4j.py
+```
+
+### 1.4. **大模型密钥配置**
 - 大模型密钥配置
   - **本地ollama模式 MODEL_TYPE需配置成ollama**
 ```angular2html
@@ -37,14 +54,21 @@ RERANK_MODEL_NAME="gte-rerank-v2"
 EMBEDDING_MODEL_NAME="text-embedding-v4"
 ```
 
-### 1.4. **MCP-HUB工具集配置**
-- 从上步MCP-HUB工具集配置中获取**只修改ID值**
-- **http://${DOCKER_HOST_INTERNAL}:3300/mcp/** 前段部分保持不变
-```angular2html
-# MCP-HUB工具集配置
-MCP_HUB_COMMON_QA_GROUP_URL="http://${DOCKER_HOST_INTERNAL}:3300/mcp/d7af20c7-1b08-4963-82b6-41affc54a20d"
-MCP_HUB_DATABASE_QA_GROUP_URL="http://${DOCKER_HOST_INTERNAL}:3300/mcp/71a21b11-d684-462d-9005-79bc62934d88"
-```
+[//]: # (### 1.4. **MCP-HUB工具集配置**)
+
+[//]: # (- 从上步MCP-HUB工具集配置中获取**只修改ID值**)
+
+[//]: # (- **http://${DOCKER_HOST_INTERNAL}:3300/mcp/** 前段部分保持不变)
+
+[//]: # (```angular2html)
+
+[//]: # (# MCP-HUB工具集配置)
+
+[//]: # (MCP_HUB_COMMON_QA_GROUP_URL="http://${DOCKER_HOST_INTERNAL}:3300/mcp/d7af20c7-1b08-4963-82b6-41affc54a20d")
+
+[//]: # (MCP_HUB_DATABASE_QA_GROUP_URL="http://${DOCKER_HOST_INTERNAL}:3300/mcp/71a21b11-d684-462d-9005-79bc62934d88")
+
+[//]: # (```)
 
 ### 1.5. **Tavily 配置**
 - 用于深度搜索智能体

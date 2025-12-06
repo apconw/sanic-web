@@ -4,7 +4,7 @@ from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 
 
-def get_llm():
+def get_llm(temperature=None):
     model_type = os.getenv("MODEL_TYPE", "qwen").strip()
     model_name = os.getenv("MODEL_NAME", "qwen-plus")
     temperature_str = os.getenv("MODEL_TEMPERATURE", "0.75")
@@ -18,11 +18,13 @@ def get_llm():
     if not model_api_key:
         raise ValueError("Environment variable MODEL_API_KEY is required.")
 
-    # 安全转换 temperature
     try:
-        temperature = float(temperature_str)
+        if temperature is not None:
+            temperature = float(temperature)
+        else:
+            temperature = float(temperature_str)
     except ValueError:
-        raise ValueError(f"Invalid MODEL_TEMPERATURE value: {temperature_str}. Must be a float.")
+        temperature = 0  # 或者设置默认值
 
     model_map = {
         "openai": lambda: ChatOpenAI(

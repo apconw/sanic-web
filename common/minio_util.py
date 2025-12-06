@@ -43,9 +43,9 @@ class MinioUtils:
     def ensure_bucket(self, bucket_name: str) -> None:
         """确保bucket存在，不存在则创建"""
         try:
-            found = self.client.bucket_exists(bucket_name)
+            found = self.client.bucket_exists(bucket_name=bucket_name)
             if not found:
-                self.client.make_bucket(bucket_name)
+                self.client.make_bucket(bucket_name=bucket_name)
                 logger.info(f"Bucket '{bucket_name}' created.")
             else:
                 logger.info(f"Bucket '{bucket_name}' already exists.")
@@ -53,8 +53,9 @@ class MinioUtils:
             logger.error(f"Error checking or creating bucket {bucket_name}: {err}")
             raise MyException(SysCode.c_9999)
 
-    def upload_file_from_request(self, request: Request, bucket_name: str = "filedata",
-                                 object_name: str = None) -> dict:
+    def upload_file_from_request(
+        self, request: Request, bucket_name: str = "filedata", object_name: str = None
+    ) -> dict:
         """
         从请求中读取文件数据并上传到MinIO服务器，返回预签名URL。
 
@@ -76,7 +77,13 @@ class MinioUtils:
                 object_name = f"{uuid4()}__{file_data.name}"
 
             self.ensure_bucket(bucket_name)
-            self.client.put_object(bucket_name, object_name, file_stream, file_length, content_type=file_data.type)
+            self.client.put_object(
+                bucket_name=bucket_name,
+                object_name=object_name,
+                data=file_stream,
+                length=file_length,
+                content_type=file_data.type,
+            )
             logger.info(f"File successfully uploaded as {object_name}.")
 
             return {"object_key": object_name}
@@ -107,7 +114,13 @@ class MinioUtils:
             file_length = len(file_stream.getvalue())
             content_type, _ = mimetypes.guess_type(file_name) or ("application/octet-stream", None)
 
-            self.client.put_object(bucket_name, file_name, file_stream, file_length, content_type=content_type)
+            self.client.put_object(
+                bucket_name=bucket_name,
+                object_name=file_name,
+                data=file_stream,
+                length=file_length,
+                content_type=content_type,
+            )
             logger.info(f"File uploaded successfully with key: {file_name}")
             return file_name
         except Exception as e:
@@ -121,7 +134,9 @@ class MinioUtils:
         try:
             if not object_key:
                 raise MyException(SysCode.c_9999, "object_key不能为空")
-            return self.client.presigned_get_object(bucket_name, object_key, expires=timedelta(days=7))
+            return self.client.presigned_get_object(
+                bucket_name=bucket_name, object_name=object_key, expires=timedelta(days=7)
+            )
         except Exception as err:
             logger.error(f"Error getting file URL by key: {err}")
             traceback.print_exception(err)
@@ -391,7 +406,7 @@ class MinioUtils:
 
             try:
                 # 获取文件内容
-                response = self.client.get_object(bucket_name, parse_file_key)
+                response = self.client.get_object(bucket_name=bucket_name, object_name=parse_file_key)
                 content = response.data.decode("utf-8")
                 response.close()
                 response.release_conn()

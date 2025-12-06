@@ -5,12 +5,12 @@ include web/Makefile
 SERVER_PROJECT_NAME = sanic-web
 
 # 服务端 Docker 镜像标签
-SERVER_DOCKER_IMAGE = apconw/$(SERVER_PROJECT_NAME):1.2.0
+SERVER_DOCKER_IMAGE = apconw/$(SERVER_PROJECT_NAME):1.2.1
 
 # 阿里云镜像仓库地址 (需要根据实际情况修改)
 ALIYUN_REGISTRY = crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com
 ALIYUN_NAMESPACE = apconw
-ALIYUN_IMAGE_NAME = $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/$(SERVER_PROJECT_NAME):1.2.0
+ALIYUN_IMAGE_NAME = $(ALIYUN_REGISTRY)/$(ALIYUN_NAMESPACE)/$(SERVER_PROJECT_NAME):1.2.1
 
 # 构建 Vue 3 前端项目镜像
 web-build:

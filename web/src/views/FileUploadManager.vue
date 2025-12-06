@@ -20,7 +20,7 @@ const options = [
     render() {
       return (
         <n-upload
-          accept=".doc,.docx,.ppt,.pptx,.pdf,.txt,.xlsx,.csv"
+          accept=".docx,.ppt,.pptx,.pdf,.txt,.xlsx,.csv"
           default-upload={false}
           show-file-list={false}
           multiple={false}

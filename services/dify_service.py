@@ -8,7 +8,7 @@ import aiohttp
 import requests
 
 from agent.common_react_agent import CommonReactAgent
-from agent.deep_research_agent import DeepAgent
+from agent.deepagent.deep_research_agent import DeepAgent
 from agent.excel.excel_agent import ExcelAgent
 from agent.text2sql.text2_sql_agent import Text2SqlAgent
 from common.exception import MyException
@@ -513,9 +513,19 @@ async def stop_dify_chat(request, task_id, qa_type) -> dict:
         success = await sql_agent.cancel_task(task_id)
         return {"success": success, "message": "任务已停止" if success else "未找到任务"}
 
-    else:
-        # 文件问答和报告问答停止任务走默认的dify接口
+    elif qa_type == DiFyAppEnum.FILEDATA_QA.value[0]:
+        user_dict = await decode_jwt_token(token)
+        task_id = user_dict["id"]
+        success = await excel_agent.cancel_task(task_id)
+        return {"success": success, "message": "任务已停止" if success else "未找到任务"}
 
+    elif qa_type == DiFyAppEnum.REPORT_QA.value[0]:
+        user_dict = await decode_jwt_token(token)
+        task_id = user_dict["id"]
+        success = await deep_agent.cancel_task(task_id)
+        return {"success": success, "message": "任务已停止" if success else "未找到任务"}
+
+    else:
         # 查询对话记录
         url = DiFyRestApi.replace_path_params(DiFyRestApi.DIFY_REST_STOP, {"task_id": task_id})
 
