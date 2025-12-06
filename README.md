@@ -63,7 +63,7 @@
 </tr>
 <tr>
 <td>
-<video src="https://github.com/user-attachments/assets/8dad64a6-8eee-4d68-a0f4-f30e92f52594" controls="controls" muted="muted" class="d-block rounded-bottom-2 border-top width-fit" style="max-height:640px; min-height: 200px">
+<video src="https://github.com/user-attachments/assets/a60dd078-6a7d-4fe3-8c4b-52385424f2cd" controls="controls" muted="muted" class="d-block rounded-bottom-2 border-top width-fit" style="max-height:640px; min-height: 200px">
 </video>
 </td>
 <td>
