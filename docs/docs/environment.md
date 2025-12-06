@@ -57,6 +57,8 @@ cd docker
  ![image](images/minio-b.png)
 
 #### 🌵 mcp-hub
+- ⚠️ **deploy.sh脚本已经初始化好了默认工具不用手动安装配置了**
+
 - [官方文档](https://github.com/samanhappy/mcphub)
 > mcp-hub是一个开源的MCP聚合工具方便安装和管理MCP工具
 
@@ -69,43 +71,83 @@ cd docker
     - NPM 仓库地址: https://registry.npmmirror.com
 ![image](images/mcp-hub-02.png)
 
-##### 工具
-- **deploy.sh脚本已经初始化好了下面两个工具不用手动配置了!**
- - 只需要关注下面mcp-server-chart工具的VIS_REQUEST_SERVER环境变量值
-> 需要安装两个工具mcp-server-chart蚂蚁图表工具/12306火车票查询工具
+[//]: # ()
+[//]: # (##### 工具)
 
-- **mcp-server-chart**
-    - **VIS_REQUEST_SERVER**环境变量配置默认为**gpt-vis-api**服务地址本
-    - 本地启动不需要修改如果是服务器部署**host.docker.internal**需要修改为实际IP地址
-    - 安装完成后创建一个工具组并复制访问地址先保存一下
-    - 复制访问**ID**用于后面步骤配置**MCP_HUB_DATABASE_QA_GROUP_URL**变量时从这里取值
+[//]: # ()
+[//]: # (> 需要安装两个工具mcp-server-chart蚂蚁图表工具/12306火车票查询工具)
+
+[//]: # ()
+[//]: # (- **mcp-server-chart**)
+
+[//]: # (    - **VIS_REQUEST_SERVER**环境变量配置默认为**gpt-vis-api**服务地址本)
+
+[//]: # (    - 本地启动不需要修改如果是服务器部署**host.docker.internal**需要修改为实际IP地址)
+
+[//]: # (    - 安装完成后创建一个工具组并复制访问地址先保存一下)
+
+[//]: # (    - 复制访问**ID**用于后面步骤配置**MCP_HUB_DATABASE_QA_GROUP_URL**变量时从这里取值)
+
+[//]: # (```angular2html)
+
+[//]: # (npx -y -y @antv/mcp-server-chart)
+
+[//]: # ()
+[//]: # (VIS_REQUEST_SERVER: http://host.docker.internal:3100/generate)
+
+[//]: # (```)
+
+[//]: # (- 安装工具)
+
+[//]: # (![image]&#40;images/antv-mcp.png&#41;)
+
+[//]: # ()
+[//]: # (- 创建组)
+
+[//]: # (![image]&#40;images/antv-group.png&#41;)
+
+[//]: # ()
+[//]: # (- 复制访问**ID**)
+
+[//]: # (![image]&#40;images/antv-group-url.png&#41;)
+
+[//]: # ()
+[//]: # ()
+[//]: # (- **12306火车票查询工具**)
+
+[//]: # (    - 安装完成后创建一个工具组并复制访问地址先保存一下)
+
+[//]: # (    - 复制访问**ID**用于后面步骤配置**MCP_HUB_COMMON_QA_GROUP_URL**变量时从这里取值)
+
+[//]: # (```angular2html)
+
+[//]: # (npx -y 12306-mcp)
+
+[//]: # (```)
+
+[//]: # (- 安装工具)
+
+[//]: # (![image]&#40;images/12306.png&#41;)
+
+[//]: # ()
+[//]: # (- 创建组)
+
+[//]: # (![image]&#40;images/12306-group.png&#41;)
+
+[//]: # ()
+[//]: # (- 复制访问**ID**)
+
+[//]: # (![image]&#40;images/12306-group-url.png&#41;)
+
+#### 🌵 langfuse (可选)
+- 链路追踪组件
+- [官方文档](https://langfuse.com/docs)
+- 部署启动
 ```angular2html
-npx -y -y @antv/mcp-server-chart
+# Get a copy of the latest Langfuse repository
+git clone https://github.com/langfuse/langfuse.git
+cd langfuse
 
-VIS_REQUEST_SERVER: http://host.docker.internal:3100/generate
+# Run the langfuse docker compose
+docker compose up
 ```
-- 安装工具
-![image](images/antv-mcp.png)
-
-- 创建组
-![image](images/antv-group.png)
-
-- 复制访问**ID**
-![image](images/antv-group-url.png)
-
-
-- **12306火车票查询工具**
-    - 安装完成后创建一个工具组并复制访问地址先保存一下
-    - 复制访问**ID**用于后面步骤配置**MCP_HUB_COMMON_QA_GROUP_URL**变量时从这里取值
-```angular2html
-npx -y 12306-mcp
-```
-- 安装工具
-![image](images/12306.png)
-
-- 创建组
-![image](images/12306-group.png)
-
-- 复制访问**ID**
-![image](images/12306-group-url.png)
-

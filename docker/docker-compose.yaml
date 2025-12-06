@@ -1,6 +1,6 @@
 services:
   chat-web:
-    image: crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/chat-vue3-mvp:1.2.0
+    image: crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/chat-vue3-mvp:1.2.1
     container_name: chat-vue3-mvp
     environment:
       TZ: Asia/Shanghai
@@ -31,7 +31,7 @@ services:
     command: server /data --console-address ":9001"
 
   chat-service:
-    image: crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/sanic-web:1.2.0
+    image: crpi-7xkxsdc0iki61l0q.cn-hangzhou.personal.cr.aliyuncs.com/apconw/sanic-web:1.2.1
     container_name: sanic-web
     environment:
       SERVER_PORT: ${SERVER_PORT:-8089}
