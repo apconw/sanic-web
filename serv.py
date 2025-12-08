@@ -17,7 +17,17 @@ autodiscover(
     recursive=True,
 )
 # 添加api docs
-app.extend(config={"OAS_PATH_TO_REDOC_HTML": "docs/redoc.html", "OAS_PATH_TO_SWAGGER_HTML": "docs/swagger.html"})
+app.extend(
+    config={
+        "OAS_PATH_TO_REDOC_HTML": "docs/redoc.html",
+        "OAS_PATH_TO_SWAGGER_HTML": "docs/swagger.html",
+        "OAS_UI_DEFAULT": "swagger",
+        "OAS_VERSION": "3.1.0",
+        "OAS_TITLE": "Sanic Web API",
+        "OAS_DESCRIPTION": "Sanic Web API 接口文档",
+        "OAS_VERSION_STRING": "1.0.0",
+    }
+)
 
 app.route("/")(lambda _: empty())
 

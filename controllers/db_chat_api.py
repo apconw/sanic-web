@@ -1,6 +1,7 @@
 import logging
 
 from sanic import Blueprint, request
+from sanic_ext import openapi
 
 from services.db_qadata_process import select_report_by_title
 from services.text2_sql_service import exe_sql_query
@@ -12,6 +13,39 @@ bp = Blueprint("text2sql", url_prefix="/llm")
 
 
 @bp.post("/process_llm_out")
+@openapi.summary("处理LLM输出的SQL")
+@openapi.description("数据问答处理大模型返回的SQL语句并执行查询")
+@openapi.tag("数据问答")
+@openapi.body(
+    {
+        "application/x-www-form-urlencoded": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "llm_text": {"type": "string", "description": "大模型返回的SQL语句"},
+                },
+                "required": ["llm_text"],
+            }
+        }
+    },
+    description="SQL语句",
+    required=True,
+)
+@openapi.response(
+    200,
+    {
+        "application/json": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "data": {"type": "array", "description": "查询结果"},
+                    "columns": {"type": "array", "description": "列名"},
+                },
+            }
+        }
+    },
+    description="查询成功",
+)
 @async_json_resp
 async def process_llm_out(req: request.Request):
     """
@@ -37,6 +71,40 @@ async def process_llm_out(req: request.Request):
 
 
 @bp.get("/query_guided_report")
+@openapi.summary("查询引导报告")
+@openapi.description("根据查询字符串查询相关的引导报告")
+@openapi.tag("数据问答")
+@openapi.parameter(
+    name="query_str",
+    location="query",
+    schema={"type": "string"},
+    description="查询字符串",
+    required=True,
+)
+@openapi.response(
+    200,
+    {
+        "application/json": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "reports": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {"type": "string", "description": "报告标题"},
+                                "content": {"type": "string", "description": "报告内容"},
+                            },
+                        },
+                        "description": "报告列表",
+                    },
+                },
+            }
+        }
+    },
+    description="查询成功",
+)
 @async_json_resp
 async def query_guided_report(req: request.Request):
     """

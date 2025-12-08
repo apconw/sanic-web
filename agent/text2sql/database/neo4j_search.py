@@ -5,6 +5,7 @@
 import logging
 import os
 import traceback
+from functools import lru_cache
 
 from py2neo import Graph
 
@@ -16,6 +17,22 @@ NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "12345678")
 
 logger = logging.getLogger(__name__)
+
+# 全局Neo4j连接（连接池）
+_neo4j_graph: Graph = None
+
+
+def get_neo4j_graph() -> Graph:
+    """获取Neo4j连接（单例模式，复用连接）"""
+    global _neo4j_graph
+    if _neo4j_graph is None:
+        try:
+            _neo4j_graph = Graph(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+            logger.info("✅ Neo4j连接已建立")
+        except Exception as e:
+            logger.error(f"❌ Neo4j连接失败: {e}")
+            raise
+    return _neo4j_graph
 
 
 """
@@ -40,8 +57,8 @@ def get_table_relationship(state: AgentState):
     :return: 包含 from_table, relationship, to_table 的字典列表
     """
     try:
-        # 连接图数据库
-        graph = Graph(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        # 使用全局连接（连接池）
+        graph = get_neo4j_graph()
 
         # Cypher 查询语句
         query = """

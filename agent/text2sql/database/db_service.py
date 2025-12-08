@@ -2,6 +2,8 @@ import warnings
 
 warnings.filterwarnings("ignore", message=".*pkg_resources.*deprecated.*")
 
+import asyncio
+import concurrent.futures
 import hashlib
 import json
 import logging
@@ -84,6 +86,7 @@ class DatabaseService:
         self._tokenized_corpus: List[List[str]] = []
         self._index_initialized: bool = False
         self.USE_RERANKER: bool = True  # 是否启用重排序器
+        self._query_vector_cache: Dict[str, np.ndarray] = {}  # 查询向量缓存
 
     @staticmethod
     def _tokenize_text(text_str: str) -> List[str]:
@@ -127,6 +130,40 @@ class DatabaseService:
             logger.warning(f"⚠️ 获取表 {table_name} 注释失败: {e}")
             return ""
 
+    def _get_all_table_comments(self, table_names: List[str]) -> Dict[str, str]:
+        """
+        批量获取多个表的注释，减少数据库查询次数。
+
+        Args:
+            table_names (List[str]): 表名列表
+
+        Returns:
+            Dict[str, str]: 表名到注释的映射
+        """
+        if not table_names:
+            return {}
+        
+        try:
+            # 构建IN子句的占位符
+            placeholders = ",".join([f":name_{i}" for i in range(len(table_names))])
+            query_str = f"""
+                SELECT table_name, table_comment
+                FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                  AND table_name IN ({placeholders})
+            """
+            query = text(query_str)
+            
+            # 构建参数字典
+            params = {f"name_{i}": name for i, name in enumerate(table_names)}
+            
+            with self._engine.connect() as conn:
+                result = conn.execute(query, params)
+                return {row[0]: (row[1] or "").strip() for row in result}
+        except Exception as e:
+            logger.warning(f"⚠️ 批量获取表注释失败: {e}")
+            return {name: "" for name in table_names}
+
     @staticmethod
     def _build_document(table_name: str, table_info: dict) -> str:
         """
@@ -161,6 +198,9 @@ class DatabaseService:
         table_names = inspector.get_table_names()
         logger.info(f"🔍 开始加载 {len(table_names)} 张表的 schema 信息...")
 
+        # 批量获取所有表注释
+        table_comments = self._get_all_table_comments(table_names)
+        
         table_info = {}
         for table_name in table_names:
             try:
@@ -176,7 +216,7 @@ class DatabaseService:
                     for fk in inspector.get_foreign_keys(table_name)
                 ]
 
-                table_comment = self._get_table_comment(table_name)
+                table_comment = table_comments.get(table_name, "")
 
                 table_info[table_name] = {
                     "columns": columns,
@@ -359,9 +399,21 @@ class DatabaseService:
                        按照相似度从高到低排序
         """
         try:
-            response = client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=query)
-            query_vec = np.array([response.data[0].embedding]).astype("float32")
-            faiss.normalize_L2(query_vec)
+            # 使用缓存避免重复调用API
+            query_hash = hashlib.md5(query.encode("utf-8")).hexdigest()
+            if query_hash in self._query_vector_cache:
+                query_vec = self._query_vector_cache[query_hash]
+            else:
+                response = client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=query)
+                query_vec = np.array([response.data[0].embedding]).astype("float32")
+                faiss.normalize_L2(query_vec)
+                # 缓存查询向量（限制缓存大小）
+                if len(self._query_vector_cache) > 100:
+                    # 删除最旧的缓存项
+                    oldest_key = next(iter(self._query_vector_cache))
+                    del self._query_vector_cache[oldest_key]
+                self._query_vector_cache[query_hash] = query_vec
+                
             _, indices = self._faiss_index.search(query_vec, top_k)
             return indices[0].tolist()
         except Exception as e:
@@ -501,15 +553,23 @@ class DatabaseService:
             # 初始化向量索引
             self._initialize_vector_index(all_table_info)
 
-            # 混合检索
-            logger.info("🔍 开始混合检索：BM25 + 向量检索")
-            bm25_top_indices = self._retrieve_by_bm25(all_table_info, user_query)
+            # 混合检索 - 并行执行BM25和向量检索以提高性能
+            logger.info("🔍 开始混合检索：BM25 + 向量检索（并行执行）")
+            
+            # 使用线程池并行执行
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                bm25_future = executor.submit(self._retrieve_by_bm25, all_table_info, user_query)
+                vector_future = executor.submit(self._retrieve_by_vector, user_query, 15)  # 减少top_k从20到15
+                
+                bm25_top_indices = bm25_future.result()
+                vector_top_indices = vector_future.result()
+            
             logger.info(f"📊 BM25检索返回 {len(bm25_top_indices)} 个结果")
-            vector_top_indices = self._retrieve_by_vector(user_query, top_k=20)
             logger.info(f"🔗 向量检索返回 {len(vector_top_indices)} 个结果")
 
-            # 过滤：仅保留同时在 BM25 前 50 和向量结果中的表
-            valid_bm25_set = set(bm25_top_indices[:50])
+            # 优化：减少候选表数量，提高性能
+            # 过滤：仅保留同时在 BM25 前 30 和向量结果中的表（从50减少到30）
+            valid_bm25_set = set(bm25_top_indices[:30])
             candidate_indices = [idx for idx in vector_top_indices if idx in valid_bm25_set]
             logger.info(f"🎯 初步筛选后保留 {len(candidate_indices)} 个候选表")
 
@@ -520,7 +580,7 @@ class DatabaseService:
             fused_indices = self._rrf_fusion(bm25_top_indices, candidate_indices, k=60)
             logger.info(f"🔄 RRF融合后得到 {len(fused_indices)} 个结果")
 
-            # 评分筛选
+            # 评分筛选 - 减少候选表数量从10到6，提高重排序性能
             selected_indices = []
             for idx in fused_indices:
                 bm25_rank = bm25_top_indices.index(idx) + 1 if idx in bm25_top_indices else len(all_table_info) + 1
@@ -528,15 +588,18 @@ class DatabaseService:
                     vector_top_indices.index(idx) + 1 if idx in vector_top_indices else len(all_table_info) + 1
                 )
                 score = 1 / (60 + bm25_rank) + 1 / (60 + vector_rank)
-                if score >= 0.01 and len(selected_indices) < 10:
+                if score >= 0.01 and len(selected_indices) < 6:  # 从10减少到6
                     selected_indices.append(idx)
 
             candidate_table_names = [self._table_names[i] for i in selected_indices]
             candidate_table_info = {name: all_table_info[name] for name in candidate_table_names}
 
-            # 重排序
-            reranked_results = self._rerank_with_dashscope(user_query, candidate_table_info)
-            final_table_names = [name for name, _ in reranked_results][:4]  # 取 top 4
+            # 重排序 - 只在有多个候选表时才执行
+            if len(candidate_table_info) > 1:
+                reranked_results = self._rerank_with_dashscope(user_query, candidate_table_info)
+                final_table_names = [name for name, _ in reranked_results][:3]  # 从4减少到3
+            else:
+                final_table_names = candidate_table_names[:3]
 
             # 构建输出
             filtered_info = {name: all_table_info[name] for name in final_table_names}
