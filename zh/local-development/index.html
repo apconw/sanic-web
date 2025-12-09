@@ -657,6 +657,9 @@
   <h1>🛠️ 本地开发</h1>
 
 <p>确保上一步<a href="../environment/">环境配置</a>已配置好</p>
+<blockquote>
+<p>本地开发依赖<strong>环境配置</strong>中的间件服务、所以先使用docker启动中间件服务</p>
+</blockquote>
 <h2 id="1">1. 后端依赖安装</h2>
 <ul>
 <li>uv安装 <a href="https://docs.astral.sh/uv/getting-started/installation/">参考uv官方文档</a></li>
@@ -688,12 +691,13 @@ Settings -&gt; Project: sanic-web -&gt; Project Interpreter -&gt; Add -&gt; Exis
 <h2 id="2-envdev">2. 修改.env.dev配置文件</h2>
 <ul>
 <li>根据实际情况修改一下配置信息</li>
-<li><strong>以下配置本机启动默认不用修改在服务器上启动时localhost需修改为实际IP地址</strong><ul>
+<li><strong>1.以下配置本机启动默认不用修改在服务器上启动时localhost需修改为实际IP地址</strong><ul>
 <li><strong>必须修改TAVILY_API_KEY</strong> Tavily搜索配置</li>
 <li><strong>必须修改MINIO_ACCESS_KEY</strong> MinIO服务Key</li>
 <li><strong>必须修改MINIO_SECRET_KEY</strong> MinIO服务密钥</li>
 </ul>
 </li>
+<li><strong>2.修改大模型/嵌入模型/重排模型密钥</strong></li>
 </ul>
 <h2 id="3">3. 初始化数据库</h2>
 <ul>
