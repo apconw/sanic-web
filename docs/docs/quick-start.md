@@ -46,12 +46,17 @@ MODEL_API_KEY="sk-xxx"
 MODEL_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
 MODEL_TEMPERATURE=0.75
 ```
-- 小模型配置
+- 嵌入模型配置
 ```angular2html
-SMALL_MODEL_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
-SMALL_MODEL_API_KEY="sk-xxx"
-RERANK_MODEL_NAME="gte-rerank-v2"
+EMBEDDING_MODEL_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+EMBEDDING_MODEL_API_KEY="sk-xx"
 EMBEDDING_MODEL_NAME="text-embedding-v4"
+```
+- 重排模型配置
+```angular2html
+RERANK_MODEL_BASE_URL="https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank"
+RERANK_MODEL_API_KEY="sk-xx"
+RERANK_MODEL_NAME="gte-rerank-v2"
 ```
 
 [//]: # (### 1.4. **MCP-HUB工具集配置**)

@@ -9,14 +9,13 @@ import os
 import re
 import time
 from functools import lru_cache
-from http import HTTPStatus
 from typing import Dict, List, Tuple, Optional
 
-import dashscope
 import faiss
 import jieba
 import numpy as np
 import pandas as pd
+import requests
 
 # from openai import OpenAI
 from langfuse.openai import OpenAI
@@ -44,18 +43,25 @@ os.makedirs(VECTOR_INDEX_DIR, exist_ok=True)
 INDEX_FILE = os.path.join(VECTOR_INDEX_DIR, "schema.index")
 METADATA_FILE = os.path.join(VECTOR_INDEX_DIR, "metadata.json")
 
-# 重排模型
-RERANK_MODEL_NAME = os.getenv("RERANK_MODEL_NAME")
-#  嵌入模型
+# 嵌入模型配置
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME")
+EMBEDDING_MODEL_API_KEY = os.getenv("EMBEDDING_MODEL_API_KEY")
+EMBEDDING_MODEL_BASE_URL = os.getenv("EMBEDDING_MODEL_BASE_URL")
 
-# 初始化 DashScope 客户端
+# 重排模型配置
+RERANK_MODEL_NAME = os.getenv("RERANK_MODEL_NAME")
+RERANK_MODEL_API_KEY = os.getenv("RERANK_MODEL_API_KEY")
+RERANK_MODEL_BASE_URL = os.getenv("RERANK_MODEL_BASE_URL")
+
+# 初始化嵌入模型客户端
 if USE_DASHSCOPE_EMBEDDING:
-    MODEL_API_KEY = os.getenv("SMALL_MODEL_API_KEY")
-    MODEL_BASE_URL = os.getenv("SMALL_MODEL_BASE_URL")
-    if not MODEL_API_KEY:
-        raise ValueError("环境变量 MODEL_API_KEY 未设置，无法初始化嵌入模型客户端")
-    client = OpenAI(api_key=MODEL_API_KEY, base_url=MODEL_BASE_URL)
+    if not EMBEDDING_MODEL_API_KEY:
+        raise ValueError("环境变量 EMBEDDING_MODEL_API_KEY 未设置，无法初始化嵌入模型客户端")
+    embedding_client = OpenAI(api_key=EMBEDDING_MODEL_API_KEY, base_url=EMBEDDING_MODEL_BASE_URL)
+
+# 重排模型不需要单独的客户端，直接使用 requests 调用
+if not RERANK_MODEL_API_KEY or not RERANK_MODEL_BASE_URL:
+    logger.warning("⚠️ 重排模型配置不完整，重排功能将被禁用")
 
 
 class DatabaseService:
@@ -285,7 +291,7 @@ class DatabaseService:
         embeddings = []
         for doc in texts:
             try:
-                response = client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=doc)
+                response = embedding_client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=doc)
                 embeddings.append(response.data[0].embedding)
             except Exception as e:
                 logger.error(f"❌ 嵌入生成失败 ({doc[:30]}...): {e}")
@@ -359,7 +365,7 @@ class DatabaseService:
                        按照相似度从高到低排序
         """
         try:
-            response = client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=query)
+            response = embedding_client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=query)
             query_vec = np.array([response.data[0].embedding]).astype("float32")
             faiss.normalize_L2(query_vec)
             _, indices = self._faiss_index.search(query_vec, top_k)
@@ -428,7 +434,7 @@ class DatabaseService:
 
     def _rerank_with_dashscope(self, query: str, candidate_tables: Dict[str, Dict]) -> List[Tuple[str, float]]:
         """
-        使用 DashScope GTE-Rerank-V2 对候选表进行重排序。
+        使用 DashScope 重排 API 对候选表进行重排序。
 
         Args:
             query (str): 用户查询
@@ -437,8 +443,8 @@ class DatabaseService:
         Returns:
             List[Tuple[str, float]]: (表名, 相关性分数) 列表，按分数降序
         """
-        if not self.USE_RERANKER:
-            logger.debug("⏭️ Reranker 已禁用，跳过重排序")
+        if not self.USE_RERANKER or not RERANK_MODEL_API_KEY:
+            logger.debug("⏭️ Reranker 已禁用或配置不完整，跳过重排序")
             return [(name, 1.0) for name in candidate_tables.keys()]
 
         try:
@@ -452,28 +458,61 @@ class DatabaseService:
             if not documents:
                 return []
 
-            logger.info("🔁 调用 GTE-Rerank-V2 进行重排序...")
-            response = dashscope.TextReRank.call(
-                api_key=MODEL_API_KEY,
-                model=RERANK_MODEL_NAME,
-                query=query,
-                documents=documents,
-                top_n=len(documents),
-                return_documents=False,
+            logger.info(f"🔁 调用重排模型 {RERANK_MODEL_NAME} 进行重排序...")
+            
+            # 构建请求数据
+            payload = {
+                "model": RERANK_MODEL_NAME,
+                "input": {
+                    "query": query,
+                    "documents": documents
+                },
+                "parameters": {
+                    "top_n": len(documents),
+                    "return_documents": False
+                }
+            }
+            
+            # 设置请求头
+            headers = {
+                "Authorization": f"Bearer {RERANK_MODEL_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            
+            # 调用重排 API
+            response = requests.post(
+                RERANK_MODEL_BASE_URL,
+                headers=headers,
+                json=payload,
+                timeout=30
             )
-
-            if response.status_code == HTTPStatus.OK:
+            
+            # 检查响应状态
+            if response.status_code != 200:
+                logger.warning(f"⚠️ Rerank API 调用失败: {response.status_code} - {response.text}")
+                return [(name, 1.0) for name in candidate_tables.keys()]
+            
+            # 解析响应
+            result_data = response.json()
+            
+            if "output" in result_data and "results" in result_data["output"]:
                 results = []
-                for item in response.output.results:
-                    table_name = next(name for name, text in name_to_text.items() if text == documents[item.index])
-                    results.append((table_name, item.relevance_score))
+                for item in result_data["output"]["results"]:
+                    idx = item["index"]
+                    score = item["relevance_score"]
+                    table_name = next(name for name, text in name_to_text.items() if text == documents[idx])
+                    results.append((table_name, score))
+                
                 results.sort(key=lambda x: x[1], reverse=True)
                 logger.info("✅ Rerank 完成")
                 return results
             else:
-                logger.warning(f"⚠️ Rerank API 调用失败: {response.message}")
+                logger.warning("⚠️ Rerank API 返回格式异常")
                 return [(name, 1.0) for name in candidate_tables.keys()]
 
+        except requests.exceptions.RequestException as e:
+            logger.error(f"❌ Rerank API 请求失败: {e}")
+            return [(name, 1.0) for name in candidate_tables.keys()]
         except Exception as e:
             logger.error(f"❌ Rerank 过程出错: {e}")
             return [(name, 1.0) for name in candidate_tables.keys()]
