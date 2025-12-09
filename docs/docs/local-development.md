@@ -1,6 +1,6 @@
 
 确保上一步[环境配置](environment.md)已配置好
-
+> 本地开发依赖**环境配置**中的间件服务、所以先使用docker启动中间件服务
 
 
 ## 1. 后端依赖安装  
@@ -33,10 +33,11 @@ Settings -> Project: sanic-web -> Project Interpreter -> Add -> Existing environ
 
 ## 2. 修改.env.dev配置文件
 - 根据实际情况修改一下配置信息
-- **以下配置本机启动默认不用修改在服务器上启动时localhost需修改为实际IP地址**
+- **1.以下配置本机启动默认不用修改在服务器上启动时localhost需修改为实际IP地址**
     - **必须修改TAVILY_API_KEY** Tavily搜索配置
     - **必须修改MINIO_ACCESS_KEY** MinIO服务Key
     - **必须修改MINIO_SECRET_KEY** MinIO服务密钥
+- **2.修改大模型/嵌入模型/重排模型密钥**
    
   
 ## 3. 初始化数据库
