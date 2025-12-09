@@ -2,8 +2,6 @@ import warnings
 
 warnings.filterwarnings("ignore", message=".*pkg_resources.*deprecated.*")
 
-import asyncio
-import concurrent.futures
 import hashlib
 import json
 import logging
@@ -11,14 +9,13 @@ import os
 import re
 import time
 from functools import lru_cache
-from http import HTTPStatus
 from typing import Dict, List, Tuple, Optional
 
-import dashscope
 import faiss
 import jieba
 import numpy as np
 import pandas as pd
+import requests
 
 # from openai import OpenAI
 from langfuse.openai import OpenAI
@@ -46,18 +43,25 @@ os.makedirs(VECTOR_INDEX_DIR, exist_ok=True)
 INDEX_FILE = os.path.join(VECTOR_INDEX_DIR, "schema.index")
 METADATA_FILE = os.path.join(VECTOR_INDEX_DIR, "metadata.json")
 
-# 重排模型
-RERANK_MODEL_NAME = os.getenv("RERANK_MODEL_NAME")
-#  嵌入模型
+# 嵌入模型配置
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME")
+EMBEDDING_MODEL_API_KEY = os.getenv("EMBEDDING_MODEL_API_KEY")
+EMBEDDING_MODEL_BASE_URL = os.getenv("EMBEDDING_MODEL_BASE_URL")
 
-# 初始化 DashScope 客户端
+# 重排模型配置
+RERANK_MODEL_NAME = os.getenv("RERANK_MODEL_NAME")
+RERANK_MODEL_API_KEY = os.getenv("RERANK_MODEL_API_KEY")
+RERANK_MODEL_BASE_URL = os.getenv("RERANK_MODEL_BASE_URL")
+
+# 初始化嵌入模型客户端
 if USE_DASHSCOPE_EMBEDDING:
-    MODEL_API_KEY = os.getenv("SMALL_MODEL_API_KEY")
-    MODEL_BASE_URL = os.getenv("SMALL_MODEL_BASE_URL")
-    if not MODEL_API_KEY:
-        raise ValueError("环境变量 MODEL_API_KEY 未设置，无法初始化嵌入模型客户端")
-    client = OpenAI(api_key=MODEL_API_KEY, base_url=MODEL_BASE_URL)
+    if not EMBEDDING_MODEL_API_KEY:
+        raise ValueError("环境变量 EMBEDDING_MODEL_API_KEY 未设置，无法初始化嵌入模型客户端")
+    embedding_client = OpenAI(api_key=EMBEDDING_MODEL_API_KEY, base_url=EMBEDDING_MODEL_BASE_URL)
+
+# 重排模型不需要单独的客户端，直接使用 requests 调用
+if not RERANK_MODEL_API_KEY or not RERANK_MODEL_BASE_URL:
+    logger.warning("⚠️ 重排模型配置不完整，重排功能将被禁用")
 
 
 class DatabaseService:
@@ -86,7 +90,6 @@ class DatabaseService:
         self._tokenized_corpus: List[List[str]] = []
         self._index_initialized: bool = False
         self.USE_RERANKER: bool = True  # 是否启用重排序器
-        self._query_vector_cache: Dict[str, np.ndarray] = {}  # 查询向量缓存
 
     @staticmethod
     def _tokenize_text(text_str: str) -> List[str]:
@@ -130,40 +133,6 @@ class DatabaseService:
             logger.warning(f"⚠️ 获取表 {table_name} 注释失败: {e}")
             return ""
 
-    def _get_all_table_comments(self, table_names: List[str]) -> Dict[str, str]:
-        """
-        批量获取多个表的注释，减少数据库查询次数。
-
-        Args:
-            table_names (List[str]): 表名列表
-
-        Returns:
-            Dict[str, str]: 表名到注释的映射
-        """
-        if not table_names:
-            return {}
-        
-        try:
-            # 构建IN子句的占位符
-            placeholders = ",".join([f":name_{i}" for i in range(len(table_names))])
-            query_str = f"""
-                SELECT table_name, table_comment
-                FROM information_schema.tables
-                WHERE table_schema = DATABASE()
-                  AND table_name IN ({placeholders})
-            """
-            query = text(query_str)
-            
-            # 构建参数字典
-            params = {f"name_{i}": name for i, name in enumerate(table_names)}
-            
-            with self._engine.connect() as conn:
-                result = conn.execute(query, params)
-                return {row[0]: (row[1] or "").strip() for row in result}
-        except Exception as e:
-            logger.warning(f"⚠️ 批量获取表注释失败: {e}")
-            return {name: "" for name in table_names}
-
     @staticmethod
     def _build_document(table_name: str, table_info: dict) -> str:
         """
@@ -198,9 +167,6 @@ class DatabaseService:
         table_names = inspector.get_table_names()
         logger.info(f"🔍 开始加载 {len(table_names)} 张表的 schema 信息...")
 
-        # 批量获取所有表注释
-        table_comments = self._get_all_table_comments(table_names)
-        
         table_info = {}
         for table_name in table_names:
             try:
@@ -216,7 +182,7 @@ class DatabaseService:
                     for fk in inspector.get_foreign_keys(table_name)
                 ]
 
-                table_comment = table_comments.get(table_name, "")
+                table_comment = self._get_table_comment(table_name)
 
                 table_info[table_name] = {
                     "columns": columns,
@@ -325,7 +291,7 @@ class DatabaseService:
         embeddings = []
         for doc in texts:
             try:
-                response = client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=doc)
+                response = embedding_client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=doc)
                 embeddings.append(response.data[0].embedding)
             except Exception as e:
                 logger.error(f"❌ 嵌入生成失败 ({doc[:30]}...): {e}")
@@ -399,21 +365,9 @@ class DatabaseService:
                        按照相似度从高到低排序
         """
         try:
-            # 使用缓存避免重复调用API
-            query_hash = hashlib.md5(query.encode("utf-8")).hexdigest()
-            if query_hash in self._query_vector_cache:
-                query_vec = self._query_vector_cache[query_hash]
-            else:
-                response = client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=query)
-                query_vec = np.array([response.data[0].embedding]).astype("float32")
-                faiss.normalize_L2(query_vec)
-                # 缓存查询向量（限制缓存大小）
-                if len(self._query_vector_cache) > 100:
-                    # 删除最旧的缓存项
-                    oldest_key = next(iter(self._query_vector_cache))
-                    del self._query_vector_cache[oldest_key]
-                self._query_vector_cache[query_hash] = query_vec
-                
+            response = embedding_client.embeddings.create(model=EMBEDDING_MODEL_NAME, input=query)
+            query_vec = np.array([response.data[0].embedding]).astype("float32")
+            faiss.normalize_L2(query_vec)
             _, indices = self._faiss_index.search(query_vec, top_k)
             return indices[0].tolist()
         except Exception as e:
@@ -480,7 +434,7 @@ class DatabaseService:
 
     def _rerank_with_dashscope(self, query: str, candidate_tables: Dict[str, Dict]) -> List[Tuple[str, float]]:
         """
-        使用 DashScope GTE-Rerank-V2 对候选表进行重排序。
+        使用 DashScope 重排 API 对候选表进行重排序。
 
         Args:
             query (str): 用户查询
@@ -489,8 +443,8 @@ class DatabaseService:
         Returns:
             List[Tuple[str, float]]: (表名, 相关性分数) 列表，按分数降序
         """
-        if not self.USE_RERANKER:
-            logger.debug("⏭️ Reranker 已禁用，跳过重排序")
+        if not self.USE_RERANKER or not RERANK_MODEL_API_KEY:
+            logger.debug("⏭️ Reranker 已禁用或配置不完整，跳过重排序")
             return [(name, 1.0) for name in candidate_tables.keys()]
 
         try:
@@ -504,28 +458,61 @@ class DatabaseService:
             if not documents:
                 return []
 
-            logger.info("🔁 调用 GTE-Rerank-V2 进行重排序...")
-            response = dashscope.TextReRank.call(
-                api_key=MODEL_API_KEY,
-                model=RERANK_MODEL_NAME,
-                query=query,
-                documents=documents,
-                top_n=len(documents),
-                return_documents=False,
+            logger.info(f"🔁 调用重排模型 {RERANK_MODEL_NAME} 进行重排序...")
+            
+            # 构建请求数据
+            payload = {
+                "model": RERANK_MODEL_NAME,
+                "input": {
+                    "query": query,
+                    "documents": documents
+                },
+                "parameters": {
+                    "top_n": len(documents),
+                    "return_documents": False
+                }
+            }
+            
+            # 设置请求头
+            headers = {
+                "Authorization": f"Bearer {RERANK_MODEL_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            
+            # 调用重排 API
+            response = requests.post(
+                RERANK_MODEL_BASE_URL,
+                headers=headers,
+                json=payload,
+                timeout=30
             )
-
-            if response.status_code == HTTPStatus.OK:
+            
+            # 检查响应状态
+            if response.status_code != 200:
+                logger.warning(f"⚠️ Rerank API 调用失败: {response.status_code} - {response.text}")
+                return [(name, 1.0) for name in candidate_tables.keys()]
+            
+            # 解析响应
+            result_data = response.json()
+            
+            if "output" in result_data and "results" in result_data["output"]:
                 results = []
-                for item in response.output.results:
-                    table_name = next(name for name, text in name_to_text.items() if text == documents[item.index])
-                    results.append((table_name, item.relevance_score))
+                for item in result_data["output"]["results"]:
+                    idx = item["index"]
+                    score = item["relevance_score"]
+                    table_name = next(name for name, text in name_to_text.items() if text == documents[idx])
+                    results.append((table_name, score))
+                
                 results.sort(key=lambda x: x[1], reverse=True)
                 logger.info("✅ Rerank 完成")
                 return results
             else:
-                logger.warning(f"⚠️ Rerank API 调用失败: {response.message}")
+                logger.warning("⚠️ Rerank API 返回格式异常")
                 return [(name, 1.0) for name in candidate_tables.keys()]
 
+        except requests.exceptions.RequestException as e:
+            logger.error(f"❌ Rerank API 请求失败: {e}")
+            return [(name, 1.0) for name in candidate_tables.keys()]
         except Exception as e:
             logger.error(f"❌ Rerank 过程出错: {e}")
             return [(name, 1.0) for name in candidate_tables.keys()]
@@ -553,23 +540,15 @@ class DatabaseService:
             # 初始化向量索引
             self._initialize_vector_index(all_table_info)
 
-            # 混合检索 - 并行执行BM25和向量检索以提高性能
-            logger.info("🔍 开始混合检索：BM25 + 向量检索（并行执行）")
-            
-            # 使用线程池并行执行
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                bm25_future = executor.submit(self._retrieve_by_bm25, all_table_info, user_query)
-                vector_future = executor.submit(self._retrieve_by_vector, user_query, 15)  # 减少top_k从20到15
-                
-                bm25_top_indices = bm25_future.result()
-                vector_top_indices = vector_future.result()
-            
+            # 混合检索
+            logger.info("🔍 开始混合检索：BM25 + 向量检索")
+            bm25_top_indices = self._retrieve_by_bm25(all_table_info, user_query)
             logger.info(f"📊 BM25检索返回 {len(bm25_top_indices)} 个结果")
+            vector_top_indices = self._retrieve_by_vector(user_query, top_k=20)
             logger.info(f"🔗 向量检索返回 {len(vector_top_indices)} 个结果")
 
-            # 优化：减少候选表数量，提高性能
-            # 过滤：仅保留同时在 BM25 前 30 和向量结果中的表（从50减少到30）
-            valid_bm25_set = set(bm25_top_indices[:30])
+            # 过滤：仅保留同时在 BM25 前 50 和向量结果中的表
+            valid_bm25_set = set(bm25_top_indices[:50])
             candidate_indices = [idx for idx in vector_top_indices if idx in valid_bm25_set]
             logger.info(f"🎯 初步筛选后保留 {len(candidate_indices)} 个候选表")
 
@@ -580,7 +559,7 @@ class DatabaseService:
             fused_indices = self._rrf_fusion(bm25_top_indices, candidate_indices, k=60)
             logger.info(f"🔄 RRF融合后得到 {len(fused_indices)} 个结果")
 
-            # 评分筛选 - 减少候选表数量从10到6，提高重排序性能
+            # 评分筛选
             selected_indices = []
             for idx in fused_indices:
                 bm25_rank = bm25_top_indices.index(idx) + 1 if idx in bm25_top_indices else len(all_table_info) + 1
@@ -588,18 +567,15 @@ class DatabaseService:
                     vector_top_indices.index(idx) + 1 if idx in vector_top_indices else len(all_table_info) + 1
                 )
                 score = 1 / (60 + bm25_rank) + 1 / (60 + vector_rank)
-                if score >= 0.01 and len(selected_indices) < 6:  # 从10减少到6
+                if score >= 0.01 and len(selected_indices) < 10:
                     selected_indices.append(idx)
 
             candidate_table_names = [self._table_names[i] for i in selected_indices]
             candidate_table_info = {name: all_table_info[name] for name in candidate_table_names}
 
-            # 重排序 - 只在有多个候选表时才执行
-            if len(candidate_table_info) > 1:
-                reranked_results = self._rerank_with_dashscope(user_query, candidate_table_info)
-                final_table_names = [name for name, _ in reranked_results][:3]  # 从4减少到3
-            else:
-                final_table_names = candidate_table_names[:3]
+            # 重排序
+            reranked_results = self._rerank_with_dashscope(user_query, candidate_table_info)
+            final_table_names = [name for name, _ in reranked_results][:4]  # 取 top 4
 
             # 构建输出
             filtered_info = {name: all_table_info[name] for name in final_table_names}
