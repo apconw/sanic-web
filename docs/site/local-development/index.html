@@ -657,6 +657,49 @@
   <h1>🛠️ 本地开发</h1>
 
 <p>确保上一步<a href="../environment/">环境配置</a>已配置好</p>
+<blockquote>
+<p>本地开发依赖<strong>环境配置</strong>中的间件服务、所以先使用docker启动中间件服务</p>
+</blockquote>
+<pre><code class="language-angular2html">sanic-web/
+├── agent/              # 智能体模块
+│   ├── context/       # 上下文管理
+│   ├── deepagent/     # DeepAgent 智能体
+│   ├── excel/         # Excel 处理
+│   ├── mcp/           # MCP 协议适配
+│   ├── middleware/    # 中间件
+│   ├── text2sql/      # Text2SQL 智能体
+│   └── common_react_agent.py
+├── controllers/        # 控制器层 (API 接口)
+│   ├── common_chat_api.py
+│   ├── db_chat_api.py
+│   ├── dify_chat_api.py
+│   ├── file_chat_api.py
+│   ├── ta_assistant_api.py
+│   └── user_service_api.py
+├── services/          # 服务层 (业务逻辑)
+│   ├── db_qadata_process.py
+│   ├── dify_service.py
+│   ├── file_chat_service.py
+│   ├── search_service.py
+│   ├── ta_assistant_service.py
+│   ├── text2_sql_service.py
+│   └── user_service.py
+├── model/             # 数据模型层
+│   ├── db_connection_pool.py
+│   ├── db_models.py
+│   └── serializers.py
+├── common/            # 通用工具类
+│   ├── neo4j/        # Neo4j 工具
+│   ├── date_util.py
+│   ├── duckdb_util.py
+│   ├── llm_util.py
+│   ├── mcp_client.py
+│   ├── redis_tool.py
+│   └── ...
+├── config/            # 配置管理
+├── constants/         # 常量定义
+└── serv.py           # 应用入口
+</code></pre>
 <h2 id="1">1. 后端依赖安装</h2>
 <ul>
 <li>uv安装 <a href="https://docs.astral.sh/uv/getting-started/installation/">参考uv官方文档</a></li>
@@ -688,12 +731,13 @@ Settings -&gt; Project: sanic-web -&gt; Project Interpreter -&gt; Add -&gt; Exis
 <h2 id="2-envdev">2. 修改.env.dev配置文件</h2>
 <ul>
 <li>根据实际情况修改一下配置信息</li>
-<li><strong>以下配置本机启动默认不用修改在服务器上启动时localhost需修改为实际IP地址</strong><ul>
+<li><strong>1.以下配置本机启动默认不用修改在服务器上启动时localhost需修改为实际IP地址</strong><ul>
 <li><strong>必须修改TAVILY_API_KEY</strong> Tavily搜索配置</li>
 <li><strong>必须修改MINIO_ACCESS_KEY</strong> MinIO服务Key</li>
 <li><strong>必须修改MINIO_SECRET_KEY</strong> MinIO服务密钥</li>
 </ul>
 </li>
+<li><strong>2.修改大模型/嵌入模型/重排模型密钥</strong></li>
 </ul>
 <h2 id="3">3. 初始化数据库</h2>
 <ul>

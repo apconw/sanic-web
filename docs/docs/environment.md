@@ -6,10 +6,9 @@
 - **GPU**: 本地使用ollama部署，推荐使用Nvidia显卡或CPU模式。**推荐公网购买APIKEY形式**
 - **内存**：8GB+
 
-### 🔧 **前置条件**
+### 🔧 **依赖组件**
 * Python 3.11.x
 * uv 0.8.0+
-* Dify 0.7.1+
 * Mysql 8.0+
 * Node.js 18.12.x+
 * Pnpm 9.x

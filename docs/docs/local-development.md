@@ -2,6 +2,47 @@
 确保上一步[环境配置](environment.md)已配置好
 > 本地开发依赖**环境配置**中的间件服务、所以先使用docker启动中间件服务
 
+```angular2html
+sanic-web/
+├── agent/              # 智能体模块
+│   ├── context/       # 上下文管理
+│   ├── deepagent/     # DeepAgent 智能体
+│   ├── excel/         # Excel 处理
+│   ├── mcp/           # MCP 协议适配
+│   ├── middleware/    # 中间件
+│   ├── text2sql/      # Text2SQL 智能体
+│   └── common_react_agent.py
+├── controllers/        # 控制器层 (API 接口)
+│   ├── common_chat_api.py
+│   ├── db_chat_api.py
+│   ├── dify_chat_api.py
+│   ├── file_chat_api.py
+│   ├── ta_assistant_api.py
+│   └── user_service_api.py
+├── services/          # 服务层 (业务逻辑)
+│   ├── db_qadata_process.py
+│   ├── dify_service.py
+│   ├── file_chat_service.py
+│   ├── search_service.py
+│   ├── ta_assistant_service.py
+│   ├── text2_sql_service.py
+│   └── user_service.py
+├── model/             # 数据模型层
+│   ├── db_connection_pool.py
+│   ├── db_models.py
+│   └── serializers.py
+├── common/            # 通用工具类
+│   ├── neo4j/        # Neo4j 工具
+│   ├── date_util.py
+│   ├── duckdb_util.py
+│   ├── llm_util.py
+│   ├── mcp_client.py
+│   ├── redis_tool.py
+│   └── ...
+├── config/            # 配置管理
+├── constants/         # 常量定义
+└── serv.py           # 应用入口
+```
 
 ## 1. 后端依赖安装  
    - uv安装 [参考uv官方文档](https://docs.astral.sh/uv/getting-started/installation/)
