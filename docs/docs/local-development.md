@@ -2,6 +2,7 @@
 确保上一步[环境配置](environment.md)已配置好
 > 本地开发依赖**环境配置**中的间件服务、所以先使用docker启动中间件服务
 
+# 项目骨架
 ```angular2html
 sanic-web/
 ├── agent/              # 智能体模块
