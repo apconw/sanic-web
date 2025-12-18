@@ -41,10 +41,10 @@ class ExcelDuckDBManager:
             self._connection = duckdb.connect(database=":memory:")
 
             # 安装并加载必要的扩展
-            self._connection.execute("INSTALL httpfs")
-            self._connection.execute("LOAD httpfs")
-
-            logger.info("DuckDB 连接创建完成，已加载 httpfs 扩展")
+            # self._connection.execute("INSTALL httpfs")
+            # self._connection.execute("LOAD httpfs")
+            #
+            # logger.info("DuckDB 连接创建完成，已加载 httpfs 扩展")
 
         return self._connection
 
@@ -53,48 +53,47 @@ class ExcelDuckDBManager:
         清理文件名，生成合法的 DuckDB catalog 名称
         """
         # 移除文件扩展名
-        name_without_ext = file_name.split('/')[-1]
-        name_without_ext = name_without_ext.rsplit('.',1)[0]
+        name_without_ext = file_name.split("/")[-1]
+        name_without_ext = name_without_ext.rsplit(".", 1)[0]
 
         # 替换非法字符
-        catalog_name = re.sub(r'[^\w\u4e00-\u9fa5]', '_', name_without_ext)
+        catalog_name = re.sub(r"[^\w\u4e00-\u9fa5]", "_", name_without_ext)
         # 移除开头和结尾的下划线
-        catalog_name = catalog_name.strip('_')
+        catalog_name = catalog_name.strip("_")
         # 确保不以数字开头
         if catalog_name and catalog_name[0].isdigit():
-            catalog_name = f'catalog_{catalog_name}'
-        return catalog_name or 'unknown_catalog'
+            catalog_name = f"catalog_{catalog_name}"
+        return catalog_name or "unknown_catalog"
 
     def _sanitize_table_name(self, sheet_name: str) -> str:
         """
         清理 Sheet 名称，生成合法的表名
         """
         # 替换非法字符
-        table_name = re.sub(r'[^\w\u4e00-\u9fa5]', '_', sheet_name)
+        table_name = re.sub(r"[^\w\u4e00-\u9fa5]", "_", sheet_name)
         # 移除开头和结尾的下划线
-        table_name = table_name.strip('_')
+        table_name = table_name.strip("_")
         # 确保不以数字开头
         if table_name and table_name[0].isdigit():
-            table_name = f'table_{table_name}'
-        return table_name or 'unknown_sheet'
+            table_name = f"table_{table_name}"
+        return table_name or "unknown_sheet"
 
     def _sanitize_column_name(self, column_name: str) -> str:
         """
         清理列名，生成合法的列名
         """
         # 替换非法字符
-        col_name = re.sub(r'[^\w\u4e00-\u9fa5]', '_', str(column_name))
+        col_name = re.sub(r"[^\w\u4e00-\u9fa5]", "_", str(column_name))
         # 移除开头和结尾的下划线
-        col_name = col_name.strip('_')
+        col_name = col_name.strip("_")
         # 确保不以数字开头
         if col_name and col_name[0].isdigit():
-            col_name = f'column_{col_name}'
-        return col_name or 'unknown_column'
+            col_name = f"column_{col_name}"
+        return col_name or "unknown_column"
 
-    def _register_dataframes_to_catalog(self,
-                                    dataframes: List[Tuple[str, pd.DataFrame]],
-                                    catalog_name: str,
-                                    file_name: str) -> Dict[str, SheetInfo]:
+    def _register_dataframes_to_catalog(
+        self, dataframes: List[Tuple[str, pd.DataFrame]], catalog_name: str, file_name: str
+    ) -> Dict[str, SheetInfo]:
         """
         将多个 DataFrame 注册到指定的 catalog 中
 
@@ -140,13 +139,10 @@ class ExcelDuckDBManager:
                 for col in df.columns:
                     dtype = str(df[col].dtype)
                     sql_type = self._map_pandas_dtype_to_sql(dtype)
-                    columns_info[col] = {
-                        "comment": col,
-                        "type": sql_type
-                    }
+                    columns_info[col] = {"comment": col, "type": sql_type}
 
                 # 获取样本数据（前5行）
-                sample_data = df.head(5).to_dict('records')
+                sample_data = df.head(5).to_dict("records")
 
                 # 创建 SheetInfo
                 sheet_info = SheetInfo(
@@ -156,7 +152,7 @@ class ExcelDuckDBManager:
                     row_count=row_count,
                     column_count=column_count,
                     columns_info=columns_info,
-                    sample_data=sample_data
+                    sample_data=sample_data,
                 )
 
                 registered_tables[table_name] = sheet_info
@@ -216,7 +212,9 @@ class ExcelDuckDBManager:
 
             # 记录 catalog 信息
             self._registered_catalogs[catalog_name] = file_path
-            logger.info(f"成功注册Excel文件 '{file_name}' 到 catalog '{catalog_name}'，共 {len(registered_tables)} 个表")
+            logger.info(
+                f"成功注册Excel文件 '{file_name}' 到 catalog '{catalog_name}'，共 {len(registered_tables)} 个表"
+            )
 
         except Exception as e:
             logger.error(f"注册Excel文件 '{file_name}' 失败: {str(e)}")
@@ -245,7 +243,7 @@ class ExcelDuckDBManager:
                 return catalog_name, {}
 
             # 生成表名（使用文件名去掉扩展名）
-            table_name = self._sanitize_table_name(file_name.rsplit('.', 1)[0])
+            table_name = self._sanitize_table_name(file_name.rsplit(".", 1)[0])
 
             # 构建数据框列表
             dataframes = [(table_name, df)]
@@ -310,14 +308,14 @@ class ExcelDuckDBManager:
         schema_info = []
 
         for full_table_name, sheet_info in self._registered_tables.items():
-            catalog_name, table_name = full_table_name.split('.', 1)
+            catalog_name, table_name = full_table_name.split(".", 1)
 
             table_schema = {
                 "table_name": full_table_name,
                 "columns": sheet_info.columns_info,
                 "foreign_keys": [],
                 "table_comment": f"{catalog_name} - {sheet_info.sheet_name}",
-                "catalog_name": catalog_name
+                "catalog_name": catalog_name,
             }
             schema_info.append(table_schema)
 
@@ -504,7 +502,7 @@ def get_default_duckdb_manager() -> ExcelDuckDBManager:
     :return: ExcelDuckDBManager实例
     """
     # 创建一个默认的管理器实例
-    if not hasattr(get_default_duckdb_manager, '_default_manager'):
+    if not hasattr(get_default_duckdb_manager, "_default_manager"):
         get_default_duckdb_manager._default_manager = ExcelDuckDBManager()
         logger.info("创建默认全局DuckDB管理器实例")
     return get_default_duckdb_manager._default_manager
@@ -522,7 +520,7 @@ def close_duckdb_manager(chat_id: str = None):
         chat_manager.close_manager(chat_id)
     else:
         # 向后兼容：关闭默认管理器
-        if hasattr(get_default_duckdb_manager, '_default_manager'):
+        if hasattr(get_default_duckdb_manager, "_default_manager"):
             get_default_duckdb_manager._default_manager.close()
             get_default_duckdb_manager._default_manager = None
             logger.info("默认全局DuckDB管理器已关闭")
