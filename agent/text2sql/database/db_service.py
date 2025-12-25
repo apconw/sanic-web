@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 import requests
 
-# from openai import OpenAI
 from langfuse.openai import OpenAI
 from rank_bm25 import BM25Okapi
 from sqlalchemy.inspection import inspect
@@ -32,8 +31,6 @@ logger = logging.getLogger(__name__)
 # 数据库连接池
 db_pool = get_db_pool()
 
-# 向量检索配置
-USE_DASHSCOPE_EMBEDDING = True  # 使用阿里云嵌入模型
 FORCE_REBUILD_VECTOR_INDEX = os.getenv("FORCE_REBUILD_VECTOR_INDEX", "false").lower() == "true"
 
 # 向量索引存储路径
@@ -54,14 +51,13 @@ RERANK_MODEL_API_KEY = os.getenv("RERANK_MODEL_API_KEY")
 RERANK_MODEL_BASE_URL = os.getenv("RERANK_MODEL_BASE_URL")
 
 # 初始化嵌入模型客户端
-if USE_DASHSCOPE_EMBEDDING:
-    if not EMBEDDING_MODEL_API_KEY:
-        raise ValueError("环境变量 EMBEDDING_MODEL_API_KEY 未设置，无法初始化嵌入模型客户端")
-    embedding_client = OpenAI(api_key=EMBEDDING_MODEL_API_KEY, base_url=EMBEDDING_MODEL_BASE_URL)
+# if not EMBEDDING_MODEL_API_KEY:
+#     raise ValueError("环境变量 EMBEDDING_MODEL_API_KEY 未设置，无法初始化嵌入模型客户端")
+embedding_client = OpenAI(api_key=EMBEDDING_MODEL_API_KEY, base_url=EMBEDDING_MODEL_BASE_URL)
 
 # 重排模型不需要单独的客户端，直接使用 requests 调用
-if not RERANK_MODEL_API_KEY or not RERANK_MODEL_BASE_URL:
-    logger.warning("⚠️ 重排模型配置不完整，重排功能将被禁用")
+# if not RERANK_MODEL_API_KEY or not RERANK_MODEL_BASE_URL:
+#     logger.warning("⚠️ 重排模型配置不完整，重排功能将被禁用")
 
 
 class DatabaseService:
@@ -443,7 +439,7 @@ class DatabaseService:
         Returns:
             List[Tuple[str, float]]: (表名, 相关性分数) 列表，按分数降序
         """
-        if not self.USE_RERANKER or not RERANK_MODEL_API_KEY:
+        if not self.USE_RERANKER:
             logger.debug("⏭️ Reranker 已禁用或配置不完整，跳过重排序")
             return [(name, 1.0) for name in candidate_tables.keys()]
 
@@ -459,56 +455,79 @@ class DatabaseService:
                 return []
 
             logger.info(f"🔁 调用重排模型 {RERANK_MODEL_NAME} 进行重排序...")
-            
-            # 构建请求数据
-            payload = {
-                "model": RERANK_MODEL_NAME,
-                "input": {
-                    "query": query,
-                    "documents": documents
-                },
-                "parameters": {
-                    "top_n": len(documents),
-                    "return_documents": False
+
+            # 根据API类型选择不同的请求结构
+            if "aliyuncs" in RERANK_MODEL_BASE_URL or "Qwen" in RERANK_MODEL_NAME:
+                # 阿里云 DashScope 格式
+                payload = {
+                    "model": RERANK_MODEL_NAME,
+                    "input": {"query": query, "documents": documents},
+                    "parameters": {"top_n": len(documents), "return_documents": False},
                 }
-            }
-            
+            else:
+                # 其他格式（如本地模型或通用rerank API）
+                payload = {"query": query, "documents": documents}
+
             # 设置请求头
-            headers = {
-                "Authorization": f"Bearer {RERANK_MODEL_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            
+            headers = {"Authorization": f"Bearer {RERANK_MODEL_API_KEY}", "Content-Type": "application/json"}
+
             # 调用重排 API
-            response = requests.post(
-                RERANK_MODEL_BASE_URL,
-                headers=headers,
-                json=payload,
-                timeout=30
-            )
-            
+            response = requests.post(RERANK_MODEL_BASE_URL, headers=headers, json=payload, timeout=30)
+
             # 检查响应状态
             if response.status_code != 200:
                 logger.warning(f"⚠️ Rerank API 调用失败: {response.status_code} - {response.text}")
                 return [(name, 1.0) for name in candidate_tables.keys()]
-            
+
             # 解析响应
             result_data = response.json()
-            
-            if "output" in result_data and "results" in result_data["output"]:
-                results = []
-                for item in result_data["output"]["results"]:
-                    idx = item["index"]
-                    score = item["relevance_score"]
-                    table_name = next(name for name, text in name_to_text.items() if text == documents[idx])
-                    results.append((table_name, score))
-                
-                results.sort(key=lambda x: x[1], reverse=True)
-                logger.info("✅ Rerank 完成")
-                return results
+
+            # 根据API类型解析响应
+            if "aliyuncs" in RERANK_MODEL_BASE_URL:
+                # 阿里云格式响应
+                if "output" in result_data and "results" in result_data["output"]:
+                    results = []
+                    for item in result_data["output"]["results"]:
+                        idx = item["index"]
+                        score = item["relevance_score"]
+                        table_name = next(name for name, text in name_to_text.items() if text == documents[idx])
+                        results.append((table_name, score))
+
+                    results.sort(key=lambda x: x[1], reverse=True)
+                    logger.info("✅ Rerank 完成")
+                    return results
             else:
-                logger.warning("⚠️ Rerank API 返回格式异常")
-                return [(name, 1.0) for name in candidate_tables.keys()]
+                # 通用格式响应 - 假设直接返回排序结果
+                if "results" in result_data:
+                    results = []
+                    for item in result_data["results"]:
+                        if "index" in item and "relevance_score" in item:  # 使用relevance_score
+                            idx = item["index"]
+                            score = item["relevance_score"]  # 使用relevance_score字段
+                            # 从document对象中提取文本
+                            if "document" in item and "text" in item["document"]:
+                                doc_text = item["document"]["text"]
+                                table_name = next(name for name, text in name_to_text.items() if text == doc_text)
+                            else:
+                                table_name = next(name for name, text in name_to_text.items() if text == documents[idx])
+                            results.append((table_name, score))
+                    results.sort(key=lambda x: x[1], reverse=True)
+                    logger.info("✅ Rerank 完成")
+                    return results
+                elif isinstance(result_data, list):
+                    # 假设直接返回了排序后的索引列表
+                    results = []
+                    for i, item in enumerate(result_data):
+                        if isinstance(item, dict) and "index" in item:
+                            idx = item["index"]
+                            score = item.get("score", 1.0 - i * 0.01)  # 默认分数递减
+                            table_name = next(name for name, text in name_to_text.items() if text == documents[idx])
+                            results.append((table_name, score))
+                    logger.info("✅ Rerank 完成")
+                    return results
+
+            logger.warning("⚠️ Rerank API 返回格式异常")
+            return [(name, 1.0) for name in candidate_tables.keys()]
 
         except requests.exceptions.RequestException as e:
             logger.error(f"❌ Rerank API 请求失败: {e}")

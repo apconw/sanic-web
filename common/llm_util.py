@@ -32,7 +32,6 @@ def get_llm(temperature=None):
             temperature=temperature,
             base_url=model_base_url,
             api_key=model_api_key,
-            extra_body={"enable_thinking": False},
         ),
         "qwen": lambda: ChatTongyi(
             model=model_name,
