@@ -15,8 +15,8 @@ def get_llm(temperature=None):
     if not model_type:
         raise ValueError("Environment variable MODEL_TYPE is not set or is empty.")
 
-    if not model_api_key:
-        raise ValueError("Environment variable MODEL_API_KEY is required.")
+    # if not model_api_key:
+    #     raise ValueError("Environment variable MODEL_API_KEY is required.")
 
     try:
         if temperature is not None:
