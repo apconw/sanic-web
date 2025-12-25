@@ -483,7 +483,7 @@ class DatabaseService:
             result_data = response.json()
 
             # 根据API类型解析响应
-            if "aliyuncs" in RERANK_MODEL_BASE_URL:
+            if "aliyuncs" in RERANK_MODEL_BASE_URL or "Qwen" in RERANK_MODEL_NAME:
                 # 阿里云格式响应
                 if "output" in result_data and "results" in result_data["output"]:
                     results = []
