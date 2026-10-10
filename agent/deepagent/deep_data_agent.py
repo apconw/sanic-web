@@ -34,6 +34,7 @@ from agent.deepagent.tools.native_sql_tools import (
     sql_db_smart_search,
     sql_db_table_relationship,
 )
+from agent.deepagent.tools.youcom_search_tool import youcom_search
 from agent.deepagent.tools.tool_call_manager import get_tool_call_manager
 from services.skill_service import SkillService
 from common.datasource_util import (
@@ -367,7 +368,7 @@ class DeepAgent:
                 )
                 # 过滤掉 sql_db_list_tables，由 sql_db_smart_search 替代
                 toolkit_tools = [t for t in toolkit.get_tools() if t.name != "sql_db_list_tables"]
-                sql_tools = [sql_db_smart_search, sql_db_table_relationship] + toolkit_tools
+                sql_tools = [sql_db_smart_search, sql_db_table_relationship, youcom_search] + toolkit_tools
                 logger.info(f"SQLAlchemy 工具列表: {[t.name for t in sql_tools]}")
             else:
                 logger.info(f"数据源 {datasource_id} ({datasource.type}) 使用原生驱动连接")
@@ -383,6 +384,7 @@ class DeepAgent:
                     sql_db_query,
                     sql_db_query_checker,
                     sql_db_table_relationship,
+                    youcom_search,
                 ]
 
         # 获取启用的 deep skill 路径
