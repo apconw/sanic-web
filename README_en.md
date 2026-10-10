@@ -136,6 +136,7 @@ docker run -d \
   --name aix-db \
   --restart unless-stopped \
   -e TZ=Asia/Shanghai \
+  -e JWT_SECRET_KEY=<your-generated-secret> \
   -e SERVER_HOST=0.0.0.0 \
   -e SERVER_PORT=8088 \
   -e SERVER_WORKERS=2 \
@@ -167,6 +168,16 @@ docker run -d \
 git clone https://github.com/apconw/Aix-DB.git
 cd Aix-DB/docker
 cp .env.template .env  # Copy env template, modify as needed
+```
+
+Edit `docker/.env` and set the required `JWT_SECRET_KEY` (leaving it blank makes `docker-compose up` fail immediately):
+```bash
+# Generate a random secret
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+> **Note**: all workers/replicas must use the same `JWT_SECRET_KEY`; rotating it invalidates every previously issued login token, requiring all users to log in again.
+
+```bash
 docker-compose up -d
 ```
 
@@ -192,6 +203,8 @@ cd Aix-DB
 ```
 
 **② Start Middleware Dependencies** (PostgreSQL, MinIO, etc.)
+
+This container also runs a backend process that needs `JWT_SECRET_KEY`; configure `docker/.env` as described in the "Deploy with Docker Compose" section above before running:
 ```bash
 cd docker
 docker-compose up -d

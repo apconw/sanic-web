@@ -13,6 +13,7 @@ tests/
 tests/*
 !tests/test_aimodel_service.py
 !tests/test_sql_security.py
+!tests/test_jwt_auth.py
 docker/volume/
 docker/dify/volumes/*
 !docker/dify/docker/volumes/myscale/config/users.d/custom_users_config.xml
