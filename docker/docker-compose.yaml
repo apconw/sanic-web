@@ -7,6 +7,9 @@ services:
       # 时区
       TZ: Asia/Shanghai
 
+      # JWT 签名密钥（必填），在 .env 中设置，否则容器启动即报错
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in docker/.env (see README)}
+
       # 后端服务配置
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: ${SERVER_PORT:-8088}

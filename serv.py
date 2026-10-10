@@ -20,6 +20,14 @@ from config.load_env import load_env
 # 加载配置文件
 load_env()
 
+# 校验必需的安全配置：JWT_SECRET_KEY 必须显式设置，不允许使用内置默认值
+# 在此处（进程启动、worker fork 之前）校验一次即可覆盖所有 worker 进程
+if not os.getenv("JWT_SECRET_KEY"):
+    raise RuntimeError(
+        "JWT_SECRET_KEY environment variable is not set. Set it before starting "
+        "the server (see README for how to generate and configure one)."
+    )
+
 # 确保日志配置在 Sanic 启动前已正确加载
 import logging
 

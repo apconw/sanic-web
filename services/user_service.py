@@ -123,7 +123,10 @@ async def generate_jwt_token(user_id, username, role="user"):
         "role": role,
         "exp": datetime.utcnow() + timedelta(days=7),
     }  # Token 过期时间
-    token = jwt.encode(payload, os.getenv("JWT_SECRET_KEY", "550e8400-e29b-41d4-a716-446655440000"), algorithm="HS256")
+    jwt_secret_key = os.getenv("JWT_SECRET_KEY")
+    if not jwt_secret_key:
+        raise RuntimeError("JWT_SECRET_KEY environment variable is not set")
+    token = jwt.encode(payload, jwt_secret_key, algorithm="HS256")
     return token
 
 
@@ -131,7 +134,10 @@ async def decode_jwt_token(token):
     """解析 JWT token 并返回 payload"""
     try:
         # 使用与生成 token 时相同的密钥和算法来解码 token
-        payload = jwt.decode(token, key=os.getenv("JWT_SECRET_KEY", "550e8400-e29b-41d4-a716-446655440000"), algorithms=["HS256"])
+        jwt_secret_key = os.getenv("JWT_SECRET_KEY")
+        if not jwt_secret_key:
+            raise RuntimeError("JWT_SECRET_KEY environment variable is not set")
+        payload = jwt.decode(token, key=jwt_secret_key, algorithms=["HS256"])
         # 检查 token 是否过期
         if "exp" in payload and datetime.utcfromtimestamp(payload["exp"]) < datetime.utcnow():
             raise jwt.ExpiredSignatureError("Token has expired")

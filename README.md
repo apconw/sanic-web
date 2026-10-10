@@ -254,6 +254,7 @@ docker run -d \
   --name aix-db \
   --restart unless-stopped \
   -e TZ=Asia/Shanghai \
+  -e JWT_SECRET_KEY=<your-generated-secret> \
   -e SERVER_HOST=0.0.0.0 \
   -e SERVER_PORT=8088 \
   -e SERVER_WORKERS=2 \
@@ -285,6 +286,16 @@ docker run -d \
 git clone https://github.com/apconw/Aix-DB.git
 cd Aix-DB/docker
 cp .env.template .env  # 复制环境变量模板，按需修改（推荐开启 VITE_ENABLE_PAGE_AGENT=true）
+```
+
+编辑 `docker/.env`，设置必填的 `JWT_SECRET_KEY`（留空会导致 `docker-compose up` 直接报错）：
+```bash
+# 生成一个随机密钥
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+> **注意**：所有 worker/副本必须使用相同的 `JWT_SECRET_KEY`；更换密钥会使已签发的登录 token 全部失效，所有用户需重新登录。
+
+```bash
 docker-compose up -d
 ```
 
@@ -310,6 +321,8 @@ cd Aix-DB
 ```
 
 **② 启动依赖中间件**（PostgreSQL、MinIO 等）
+
+容器内也会启动一份后端服务，同样需要 `JWT_SECRET_KEY`，请先按上面「使用 Docker Compose」一节配置好 `docker/.env` 再执行：
 ```bash
 cd docker
 docker-compose up -d
